@@ -143,6 +143,8 @@ describe('AuthContext', () => {
   })
 
   it('handles API error gracefully', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    
     mockLocalStorage.getItem.mockReturnValue('invalid-token')
     vi.mocked(authApi.me).mockRejectedValue(new Error('Unauthorized'))
 
@@ -152,6 +154,8 @@ describe('AuthContext', () => {
       expect(screen.getByTestId('authenticated')).toHaveTextContent('not-authenticated')
       expect(screen.getByTestId('user')).toHaveTextContent('no-user')
     })
+    
+    consoleSpy.mockRestore()
   })
 
   it('responds to localStorage changes', async () => {

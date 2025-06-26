@@ -53,6 +53,7 @@ export class GitHubClient implements IntegrationClient {
       const pushEvents = events.filter(
         (event) =>
           event.type === 'PushEvent' &&
+          event.created_at &&
           new Date(event.created_at) >= since &&
           new Date(event.created_at) <= until,
       );
@@ -67,7 +68,7 @@ export class GitHubClient implements IntegrationClient {
             message: commit.message,
             url: `https://github.com/${repoName}/commit/${commit.sha}`,
             author: commit.author.name || this.username!,
-            date: event.created_at,
+            date: event.created_at || new Date().toISOString(),
             repository: repoName,
           });
         }

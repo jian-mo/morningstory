@@ -45,9 +45,17 @@ fi
 echo -e "${YELLOW}🛑 Stopping existing local containers (if any)...${NC}"
 docker compose down -v --remove-orphans || true
 
-# Build and start containers (Redis and management tools only)
-echo -e "${YELLOW}🔨 Building and starting Docker containers (redis, pgadmin, redis-commander)...${NC}"
-docker compose up -d redis pgadmin redis-commander
+# Build and start containers (PostgreSQL, Redis and management tools)
+echo -e "${YELLOW}🔨 Building and starting Docker containers (postgres, redis, pgadmin, redis-commander)...${NC}"
+docker compose up -d postgres redis pgadmin redis-commander
+
+# Wait for PostgreSQL to be ready
+echo -e "${YELLOW}⏳ Waiting for PostgreSQL to be ready...${NC}"
+while ! docker compose exec postgres pg_isready -U morning_story -d morning_story_dev > /dev/null 2>&1; do
+    echo -n "."
+    sleep 1
+done
+echo -e "\n${GREEN}✅ PostgreSQL is ready!${NC}"
 
 # Wait for Redis to be ready
 echo -e "${YELLOW}⏳ Waiting for Redis to be ready...${NC}"
@@ -73,18 +81,22 @@ npm run prisma:migrate --workspace=@morning-story/api
 echo -e "${GREEN}🎉 Local development environment is ready!${NC}"
 echo ""
 echo -e "${YELLOW}📋 What's running:${NC}"
-echo "  • Supabase PostgreSQL: Your remote Supabase database"
+echo "  • PostgreSQL: localhost:5432 (morning_story_dev database)"
 echo "  • Redis: localhost:6379"
-echo "  • PgAdmin: http://localhost:5050 (Login with credentials from docker-compose.yml)"
+echo "  • PgAdmin: http://localhost:5050 (admin@morning-story.local / admin123)"
 echo "  • Redis Commander: http://localhost:8081"
 echo ""
 echo -e "${YELLOW}⚠️  Next Steps:${NC}"
 echo "  • Ensure your GitHub OAuth and OpenAI API keys are set in 'apps/api/.env'"
 echo ""
 echo -e "${YELLOW}🚀 To start the API and Web app:${NC}"
-echo "  npm run dev"
+echo "  # Start API server:"
+echo "  cd apps/api && npm run dev:full"
+echo "  # In another terminal, start web app:"
+echo "  cd apps/web && npm run dev"
 echo ""
 echo -e "${YELLOW}📖 API docs will be available at:${NC}"
 echo "  http://localhost:3000/api"
+echo "  Health check: http://localhost:3000/health"
 echo ""
 echo -e "${GREEN}Happy coding! 🎯${NC}"

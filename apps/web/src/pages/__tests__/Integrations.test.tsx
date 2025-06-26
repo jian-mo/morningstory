@@ -115,7 +115,7 @@ describe('Integrations', () => {
 
     await waitFor(() => {
       expect(screen.getByText('1 Connected')).toBeInTheDocument()
-      expect(screen.getByText('1 Available')).toBeInTheDocument() // Only GitHub is implemented
+      expect(screen.getByText('0 Available')).toBeInTheDocument() // GitHub is connected, so 0 implemented ones available
     })
   })
 

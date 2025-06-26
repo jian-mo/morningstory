@@ -5,11 +5,14 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "baseUrl": "./",
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "strict": false,
+    "baseUrl": "../../",
     "paths": {
-      "@morning-story/integrations": ["../../libs/integrations/src"],
-      "@morning-story/llm": ["../../libs/llm/src"],
-      "@morning-story/shared": ["../../libs/shared/src"]
+      "@morning-story/integrations": ["libs/integrations/src"],
+      "@morning-story/llm": ["libs/llm/src"],
+      "@morning-story/shared": ["libs/shared/src"]
     }
   },
   "include": ["src/**/*", "../../libs/**/*"],

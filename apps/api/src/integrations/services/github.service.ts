@@ -6,7 +6,7 @@ import { IntegrationType } from '@prisma/client';
 
 @Injectable()
 export class GitHubService {
-  constructor(private integrationsService: IntegrationsService) {}
+  constructor(private readonly integrationsService: IntegrationsService) {}
 
   async fetchUserActivity(userId: string, since: Date, until?: Date): Promise<GitHubActivity | null> {
     const integration = await this.integrationsService.findOne(userId, IntegrationType.GITHUB);
@@ -15,25 +15,30 @@ export class GitHubService {
       return null;
     }
 
-    const client = new GitHubClient({
-      accessToken: integration.accessToken,
-      username: integration.metadata?.username,
-    });
-
-    const isValid = await client.validateToken();
-    if (!isValid) {
-      await this.integrationsService.update(userId, IntegrationType.GITHUB, {
-        isActive: false,
+    try {
+      const client = new GitHubClient({
+        accessToken: integration.accessToken,
+        username: (integration.metadata as any)?.username || '',
       });
+
+      const isValid = await client.validateToken();
+      if (!isValid) {
+        await this.integrationsService.update(userId, IntegrationType.GITHUB, {
+          isActive: false,
+        });
+        return null;
+      }
+
+      const activity = await client.fetchActivity(since, until);
+      
+      await this.integrationsService.update(userId, IntegrationType.GITHUB, {
+        lastSyncedAt: new Date(),
+      });
+
+      return activity;
+    } catch (error) {
+      console.error('GitHub API error:', error);
       return null;
     }
-
-    const activity = await client.fetchActivity(since, until);
-    
-    await this.integrationsService.update(userId, IntegrationType.GITHUB, {
-      lastSyncedAt: new Date(),
-    });
-
-    return activity;
   }
 }

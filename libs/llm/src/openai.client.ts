@@ -14,15 +14,15 @@ export class OpenAIClient {
   async generateStandup(request: StandupGenerationRequest): Promise<StandupGenerationResponse> {
     const prompt = STANDUP_PROMPTS[request.preferences.tone] || DEFAULT_PROMPT;
     
-    const userPrompt = this.buildUserPrompt(prompt.user, request);
+    const userPrompt = this.buildUserPrompt(prompt?.user || '', request);
     
-    const startTime = Date.now();
+    // const _startTime = Date.now();
     
     try {
       const completion = await this.client.chat.completions.create({
         model: this.model,
         messages: [
-          { role: 'system', content: prompt.system },
+          { role: 'system', content: prompt?.system || 'You are an AI assistant that helps generate standup reports.' },
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.7,
@@ -42,8 +42,8 @@ export class OpenAIClient {
           generatedAt: new Date().toISOString(),
         },
       };
-    } catch (error) {
-      throw new Error(`OpenAI API error: ${error.message}`);
+    } catch (error: any) {
+      throw new Error(`OpenAI API error: ${error?.message || 'Unknown error'}`);
     }
   }
 

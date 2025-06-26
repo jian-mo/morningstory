@@ -74,7 +74,7 @@ describe('OpenAIClient', () => {
       const result = await client.generateStandup(mockRequest);
 
       expect(result).toEqual({
-        content: mockCompletion.choices[0].message.content,
+        content: mockCompletion.choices[0]?.message?.content,
         metadata: {
           model: 'gpt-4',
           tokensUsed: 150,

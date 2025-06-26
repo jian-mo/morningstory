@@ -18,7 +18,7 @@ export const getYesterday = (): Date => {
 
 export const formatDate = (date: Date, format: 'short' | 'long' = 'short'): string => {
   if (format === 'short') {
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split('T')[0] || '';
   }
   return date.toLocaleString('en-US', {
     weekday: 'long',

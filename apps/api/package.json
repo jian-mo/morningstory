@@ -5,9 +5,11 @@
   "private": true,
   "scripts": {
     "dev": "nest start --watch",
+    "dev:simple": "ts-node src/main-simple.ts",
+    "dev:full": "ts-node -r tsconfig-paths/register src/main.ts",
     "build": "nest build",
-    "start": "node dist/main",
-    "start:prod": "node dist/main",
+    "start": "node dist/apps/api/src/main",
+    "start:prod": "node dist/apps/api/src/main",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",

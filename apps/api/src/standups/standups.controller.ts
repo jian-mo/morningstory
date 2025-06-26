@@ -47,7 +47,12 @@ export class StandupsController {
   @ApiOperation({ summary: 'Generate a new standup' })
   async generate(@Request() req: any, @Body() generateDto: GenerateStandupDto) {
     const date = generateDto.date ? new Date(generateDto.date) : new Date();
-    return this.generationService.generateDailyStandup(req.user.id, date);
+    return this.generationService.generateStandup(req.user.id, {
+      tone: generateDto.tone as 'professional' | 'casual' | 'detailed' | 'concise',
+      length: generateDto.length as 'short' | 'medium' | 'long',
+      customPrompt: generateDto.customPrompt,
+      date,
+    });
   }
 
   @Post(':id/regenerate')
@@ -58,8 +63,8 @@ export class StandupsController {
     @Body() generateDto: GenerateStandupDto,
   ) {
     const preferences = {
-      tone: generateDto.tone || 'professional',
-      length: generateDto.length || 'medium',
+      tone: (generateDto.tone || 'professional') as 'professional' | 'casual' | 'detailed' | 'concise',
+      length: (generateDto.length || 'medium') as 'short' | 'medium' | 'long',
       customPrompt: generateDto.customPrompt,
     };
     return this.generationService.regenerateStandup(req.user.id, id, preferences);

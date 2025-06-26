@@ -65,7 +65,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value: AuthContextType = {
     user: user || null,
-    isLoading,
+    isLoading: !!token && isLoading,
     isAuthenticated: !!user,
     login,
     logout,

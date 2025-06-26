@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Test</title>
+</head>
+<body>
+    <h1>Testing Frontend</h1>
+    <iframe src="http://localhost:3001" width="100%" height="600px"></iframe>
+    <script>
+        // Test if the frontend loads
+        setTimeout(() => {
+            const iframe = document.querySelector('iframe');
+            console.log('Frontend loading test completed');
+        }, 5000);
+    </script>
+</body>
+</html>

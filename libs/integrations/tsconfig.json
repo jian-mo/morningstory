@@ -2,9 +2,14 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
-    "composite": true
+    "rootDir": "../../",
+    "composite": true,
+    "baseUrl": "../../",
+    "paths": {
+      "@morning-story/shared": ["libs/shared/src"],
+      "@morning-story/shared/*": ["libs/shared/src/*"]
+    }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../shared/src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

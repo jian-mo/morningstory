@@ -10,10 +10,10 @@ import { IntegrationType } from '@prisma/client';
 @Injectable()
 export class GithubStrategy extends PassportStrategy(Strategy, 'github') {
   constructor(
-    private configService: ConfigService,
-    private authService: AuthService,
-    private usersService: UsersService,
-    private integrationsService: IntegrationsService,
+    private readonly configService: ConfigService,
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+    private readonly integrationsService: IntegrationsService,
   ) {
     super({
       clientID: configService.get<string>('GITHUB_CLIENT_ID'),
