@@ -2,11 +2,16 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "./",
+    "paths": {
+      "@morning-story/integrations": ["../../libs/integrations/src"],
+      "@morning-story/llm": ["../../libs/llm/src"],
+      "@morning-story/shared": ["../../libs/shared/src"]
+    }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "../../libs/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
 }

@@ -1,6 +1,27 @@
 version: '3.8'
 
 services:
+  # Local PostgreSQL for development
+  postgres:
+    image: postgres:15-alpine
+    container_name: morning-story-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: morning_story
+      POSTGRES_PASSWORD: morning_story_dev
+      POSTGRES_DB: morning_story_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U morning_story -d morning_story_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - morning-story
+
   # Redis for caching and sessions (optional but recommended)
   redis:
     image: redis:7-alpine
@@ -76,6 +97,8 @@ services:
       - morning-story
 
 volumes:
+  postgres_data:
+    driver: local
   redis_data:
     driver: local
 
