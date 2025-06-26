@@ -1,0 +1,34 @@
+{
+  "CacheClusterId": "morning-story-redis",
+  "Engine": "redis",
+  "EngineVersion": "7.0",
+  "CacheNodeType": "cache.t3.micro",
+  "NumCacheNodes": 1,
+  "Port": 6379,
+  "CacheSubnetGroupName": "morning-story-cache-subnet-group",
+  "SecurityGroupIds": [
+    "sg-XXXXXX"
+  ],
+  "PreferredMaintenanceWindow": "sun:05:00-sun:06:00",
+  "NotificationTopicArn": "arn:aws:sns:REGION:ACCOUNT_ID:morning-story-notifications",
+  "SnapshotRetentionLimit": 5,
+  "SnapshotWindow": "03:00-05:00",
+  "PreferredAvailabilityZone": "us-west-2a",
+  "TransitEncryptionEnabled": true,
+  "AtRestEncryptionEnabled": true,
+  "AuthToken": "CHANGE_THIS_AUTH_TOKEN",
+  "Tags": [
+    {
+      "Key": "Environment",
+      "Value": "production"
+    },
+    {
+      "Key": "Project",
+      "Value": "morning-story"
+    },
+    {
+      "Key": "Service",
+      "Value": "cache"
+    }
+  ]
+}

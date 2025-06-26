@@ -1,0 +1,36 @@
+{
+  "serviceName": "morning-story-api",
+  "cluster": "morning-story-cluster",
+  "taskDefinition": "morning-story-api",
+  "desiredCount": 2,
+  "launchType": "FARGATE",
+  "platformVersion": "LATEST",
+  "networkConfiguration": {
+    "awsvpcConfiguration": {
+      "subnets": [
+        "subnet-XXXXXX",
+        "subnet-YYYYYY"
+      ],
+      "securityGroups": [
+        "sg-XXXXXX"
+      ],
+      "assignPublicIp": "ENABLED"
+    }
+  },
+  "loadBalancers": [
+    {
+      "targetGroupArn": "arn:aws:elasticloadbalancing:REGION:ACCOUNT_ID:targetgroup/morning-story-api/XXXXXX",
+      "containerName": "morning-story-api",
+      "containerPort": 3000
+    }
+  ],
+  "healthCheckGracePeriodSeconds": 300,
+  "deploymentConfiguration": {
+    "maximumPercent": 200,
+    "minimumHealthyPercent": 50,
+    "deploymentCircuitBreaker": {
+      "enable": true,
+      "rollback": true
+    }
+  }
+}

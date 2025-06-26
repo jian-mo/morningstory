@@ -29,88 +29,117 @@ This bot aims to solve that!
 ## Tech Stack
 
 *   **Backend:** TypeScript with NestJS (enterprise-grade, modular architecture)
-*   **Database:** PostgreSQL (primary) + Redis (caching/jobs)
+*   **Database:** AWS RDS PostgreSQL with Prisma ORM
+*   **Cache/Jobs:** AWS ElastiCache Redis
 *   **Frontend (Web):** React 18 with TypeScript (coming soon)
-*   **LLM Interaction:** OpenAI GPT-4 via LangChain.js
-*   **Authentication:** JWT with Passport.js strategies
-*   **Infrastructure:** Docker, Docker Compose, Kubernetes-ready
-*   **Monorepo:** Turbo for efficient builds
+*   **LLM:** OpenAI GPT-4 for intelligent standup generation
+*   **Authentication:** JWT with GitHub OAuth integration
+*   **Deployment:** AWS ECS (API) + Vercel (Frontend)
+*   **Infrastructure:** Docker containers, GitHub Actions CI/CD
+*   **Monorepo:** Turbo for efficient builds and testing
 
-## Current Status - MVP Progress (65% Complete)
+## Current Status - MVP Progress (95% Complete)
 
 ### ✅ Completed
-- **Project Foundation**: Monorepo structure with TypeScript, ESLint, Prettier
-- **Docker Environment**: PostgreSQL 15 + Redis 7 with health checks
-- **Database Schema**: Comprehensive Prisma models for users, integrations, standups
+- **Project Foundation**: Monorepo structure with TypeScript, ESLint, Prettier  
+- **Database**: AWS RDS PostgreSQL with Prisma ORM and comprehensive schema
+- **Docker Setup**: Complete local development environment with PostgreSQL + Redis
 - **NestJS API**: Modular architecture with Swagger documentation
-- **Authentication System**: JWT auth with registration/login endpoints
-- **Core Services**: User management, integration storage, standup CRUD operations
+- **Authentication**: JWT + GitHub OAuth with secure token management
+- **GitHub Integration**: Full OAuth flow and API client for activity fetching
+- **OpenAI Integration**: Intelligent standup generation with customizable prompts
+- **Security**: AES-256 encryption for credential storage
+- **Testing**: Comprehensive unit and e2e test suite
+- **AWS Infrastructure**: RDS, ElastiCache, ECS configuration with deployment scripts
 
-### 🚧 In Progress
-- **GitHub Integration**: OAuth flow and API client for fetching commits, PRs, issues
-
-### 📋 Coming Next
-- OpenAI integration for intelligent standup generation
-- Encryption service for secure credential storage
+### 📋 Final Steps
+- React frontend with Vercel deployment
 - Background job processing with BullMQ
-- CLI tool for easy command-line access
+- CLI tool for command-line usage
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js 20+ and npm 10+
 - Docker and Docker Compose
-- PostgreSQL 15 (or use Docker)
-- Redis 7 (or use Docker)
+- Git
 
-### Quick Start
+### Quick Start (Local Development)
 
-1. **Clone the repository**
+1. **Clone and setup**
    ```bash
    git clone https://github.com/jian-mo/morningstory.git
    cd morningstory
    ```
 
-2. **Install dependencies**
+2. **Run setup script**
    ```bash
-   npm install
+   chmod +x scripts/setup-local.sh
+   ./scripts/setup-local.sh
    ```
 
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-4. **Start Docker services**
-   ```bash
-   docker-compose up -d
-   ```
-
-5. **Run database migrations**
-   ```bash
-   cd apps/api
-   npx prisma generate
-   npx prisma migrate dev
-   ```
-
-6. **Start the development server**
+3. **Start the API**
    ```bash
    npm run dev
    ```
 
-7. **Access the API**
+4. **Access services**
    - API: http://localhost:3000
    - Swagger Docs: http://localhost:3000/api
+   - PgAdmin: http://localhost:5050 (admin@morning-story.local / admin123)
+   - Redis Commander: http://localhost:8081
+
+### Production Deployment (AWS)
+
+1. **Configure AWS CLI**
+   ```bash
+   aws configure
+   # or
+   aws sso login
+   ```
+
+2. **Set environment variables**
+   ```bash
+   export AWS_ACCOUNT_ID=your-account-id
+   export AWS_REGION=us-west-2
+   ```
+
+3. **Deploy to AWS**
+   ```bash
+   ./scripts/deploy-aws.sh
+   ```
 
 ### API Endpoints
 
+#### Authentication
 - `POST /auth/register` - Create new account
-- `POST /auth/login` - Login with email/password
+- `POST /auth/login` - Login with email/password  
+- `GET /auth/github` - Start GitHub OAuth flow
 - `GET /auth/me` - Get current user profile
+
+#### Integrations
 - `GET /integrations` - List user integrations
+- `DELETE /integrations/:type` - Remove integration
+
+#### Standups
 - `GET /standups` - Get standup history
 - `GET /standups/today` - Get today's standup
+- `POST /standups/generate` - Generate new standup
+- `POST /standups/:id/regenerate` - Regenerate with new preferences
+- `DELETE /standups/:id` - Delete standup
+
+### Testing
+
+```bash
+# Run unit tests
+npm run test
+
+# Run e2e tests  
+npm run test:e2e
+
+# Run tests with coverage
+npm run test:cov
+```
 
 ## Contributing
 

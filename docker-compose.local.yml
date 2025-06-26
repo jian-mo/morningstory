@@ -26,44 +26,50 @@ services:
     image: redis:7-alpine
     container_name: morning-story-redis
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass redis_dev_password
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - morning-story
 
-  api:
-    build:
-      context: .
-      dockerfile: ./infrastructure/docker/Dockerfile.dev
-      target: development
-    container_name: morning-story-api
+  # Optional: PgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: morning-story-pgadmin
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://morning_story:morning_story_dev@postgres:5432/morning_story_dev
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET: dev_jwt_secret_change_in_production
-      ENCRYPTION_KEY: dev_encryption_key_32_chars_long
+      PGADMIN_DEFAULT_EMAIL: admin@morning-story.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
     volumes:
-      - ./apps/api:/app/apps/api
-      - ./libs:/app/libs
-      - /app/node_modules
+      - pgadmin_data:/var/lib/pgadmin
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - morning-story
+
+  # Optional: Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: morning-story-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:redis_dev_password
+    ports:
+      - "8081:8081"
+    depends_on:
       redis:
         condition: service_healthy
-    command: npm run dev
     networks:
       - morning-story
 
@@ -71,6 +77,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  pgadmin_data:
     driver: local
 
 networks:

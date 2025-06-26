@@ -8,12 +8,22 @@
     "libs/*"
   ],
   "scripts": {
-    "dev": "turbo dev",
+    "dev": "cd apps/api && npm run dev",
     "build": "turbo build",
     "test": "turbo test",
+    "test:e2e": "cd apps/api && npm run test:e2e",
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "setup": "./scripts/setup-local.sh",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:clean": "docker-compose down -v && docker system prune -f",
+    "db:migrate": "cd apps/api && npm run prisma:migrate",
+    "db:generate": "cd apps/api && npm run prisma:generate",
+    "db:reset": "cd apps/api && npx prisma migrate reset --force",
+    "deploy:aws": "./scripts/deploy-aws.sh"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
