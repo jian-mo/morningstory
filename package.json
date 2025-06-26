@@ -8,9 +8,13 @@
     "libs/*"
   ],
   "scripts": {
-    "dev": "cd apps/api && npm run dev",
+    "dev": "turbo dev",
+    "dev:api": "cd apps/api && npm run dev",
+    "dev:web": "cd apps/web && npm run dev",
     "build": "turbo build",
     "test": "turbo test",
+    "test:api": "cd apps/api && npm run test",
+    "test:web": "cd apps/web && npm run test",
     "test:e2e": "cd apps/api && npm run test:e2e",
     "lint": "turbo lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
