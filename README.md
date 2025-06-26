@@ -1,4 +1,4 @@
-# Morning Story 🤖
+# What's the Glory, Morning Story? 🤖
 
 ## Tired of the Pre-Standup Scramble? We're Building a Solution!
 

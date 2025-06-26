@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String?
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  integrations Integration[]
+  standups     Standup[]
+  preferences  UserPreferences?
+}
+
+model UserPreferences {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tone           String   @default("professional")
+  length         String   @default("medium")
+  customPrompt   String?
+  excludeWeekends Boolean @default(true)
+  scheduleTime   String?  // Format: "HH:MM"
+  timezone       String   @default("UTC")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Integration {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              IntegrationType
+  accessToken       String   @db.Text // Encrypted
+  refreshToken      String?  @db.Text // Encrypted
+  tokenExpiry       DateTime?
+  metadata          Json?    // Store provider-specific data
+  isActive          Boolean  @default(true)
+  lastSyncedAt      DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+model Standup {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content         String   @db.Text
+  rawData         Json     // Store the fetched data used to generate
+  metadata        Json?    // Store generation metadata (model, tokens, etc)
+  generatedAt     DateTime @default(now())
+  date            DateTime @db.Date // The date this standup is for
+
+  @@index([userId, date])
+}
+
+enum IntegrationType {
+  GITHUB
+  ASANA
+  JIRA
+  TRELLO
+  GITLAB
+  SLACK
+}

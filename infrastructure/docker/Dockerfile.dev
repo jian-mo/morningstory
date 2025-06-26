@@ -1,0 +1,27 @@
+FROM node:20-alpine AS base
+
+# Install dependencies only when needed
+FROM base AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+
+# Install dependencies based on the preferred package manager
+COPY package.json package-lock.json* ./
+COPY apps/api/package.json ./apps/api/
+COPY libs/*/package.json ./libs/*/
+RUN npm ci
+
+# Development image
+FROM base AS development
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+# Install dev dependencies
+RUN npm install
+
+EXPOSE 3000
+
+ENV NODE_ENV=development
+
+CMD ["npm", "run", "dev"]
