@@ -6,8 +6,6 @@ import { IntegrationType } from '@prisma/client';
 
 describe('IntegrationsService', () => {
   let service: IntegrationsService;
-  let prismaService: PrismaService;
-  let encryptionService: EncryptionService;
 
   const mockIntegration = {
     id: '1',
@@ -48,8 +46,6 @@ describe('IntegrationsService', () => {
     }).compile();
 
     service = module.get<IntegrationsService>(IntegrationsService);
-    prismaService = module.get<PrismaService>(PrismaService);
-    encryptionService = module.get<EncryptionService>(EncryptionService);
   });
 
   afterEach(() => {
@@ -76,8 +72,6 @@ describe('IntegrationsService', () => {
           createdAt: true,
           updatedAt: true,
           userId: true,
-          accessToken: false,
-          refreshToken: false,
           metadata: true,
           tokenExpiry: true,
         },
@@ -104,8 +98,8 @@ describe('IntegrationsService', () => {
         accessToken: decryptedToken,
         refreshToken: decryptedRefresh,
       });
-      expect(mockEncryptionService.decrypt).toHaveBeenCalledWith(mockIntegration.accessToken);
-      expect(mockEncryptionService.decrypt).toHaveBeenCalledWith(mockIntegration.refreshToken);
+      expect(mockEncryptionService.decrypt).toHaveBeenCalledWith('encrypted-token');
+      expect(mockEncryptionService.decrypt).toHaveBeenCalledWith('encrypted-refresh');
     });
 
     it('should return null when integration not found', async () => {

@@ -1,6 +1,3 @@
-const { pathsToModuleNameMapper } = require('ts-jest');
-const { compilerOptions } = require('./tsconfig.json');
-
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
@@ -18,9 +15,11 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  moduleNameMapping: pathsToModuleNameMapper(compilerOptions.paths || {}, {
-    prefix: '<rootDir>/../../',
-  }),
+  moduleNameMapper: {
+    '^@morning-story/shared$': '<rootDir>/../../libs/shared/src',
+    '^@morning-story/integrations$': '<rootDir>/../../libs/integrations/src',
+    '^@morning-story/llm$': '<rootDir>/../../libs/llm/src',
+  },
   setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
   testTimeout: 30000,
 };

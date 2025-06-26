@@ -10,7 +10,7 @@ export class IntegrationsService {
     private encryptionService: EncryptionService,
   ) {}
 
-  async findAll(userId: string): Promise<Integration[]> {
+  async findAll(userId: string): Promise<Omit<Integration, 'accessToken' | 'refreshToken'>[]> {
     return this.prisma.integration.findMany({
       where: { userId },
       select: {
@@ -21,8 +21,6 @@ export class IntegrationsService {
         createdAt: true,
         updatedAt: true,
         userId: true,
-        accessToken: false,
-        refreshToken: false,
         metadata: true,
         tokenExpiry: true,
       },

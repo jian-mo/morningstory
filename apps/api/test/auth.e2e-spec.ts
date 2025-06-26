@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
@@ -41,7 +41,7 @@ describe('AuthController (e2e)', () => {
           name: 'Test User',
         })
         .expect(201)
-        .expect((res) => {
+        .expect((res: any) => {
           expect(res.body).toHaveProperty('access_token');
           expect(res.body.user).toEqual({
             id: expect.any(String),
@@ -164,7 +164,7 @@ describe('AuthController (e2e)', () => {
         .get('/auth/me')
         .set('Authorization', `Bearer ${accessToken}`)
         .expect(200)
-        .expect((res) => {
+        .expect((res: any) => {
           expect(res.body).toEqual({
             id: expect.any(String),
             email: 'test@example.com',

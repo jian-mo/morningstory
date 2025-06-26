@@ -1,6 +1,3 @@
-import { Test } from '@nestjs/testing';
-import { ConfigModule } from '@nestjs/config';
-
 // Global test setup
 beforeAll(async () => {
   // Set test environment variables

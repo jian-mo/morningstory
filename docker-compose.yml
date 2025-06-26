@@ -1,27 +1,7 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: morning-story-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: morning_story
-      POSTGRES_PASSWORD: morning_story_dev
-      POSTGRES_DB: morning_story_dev
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U morning_story -d morning_story_dev"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - morning-story
-
+  # Redis for caching and sessions (optional but recommended)
   redis:
     image: redis:7-alpine
     container_name: morning-story-redis
@@ -39,6 +19,34 @@ services:
     networks:
       - morning-story
 
+  # PgAdmin for database management (connects to Supabase)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: morning-story-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@morning-story.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    networks:
+      - morning-story
+
+  # Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: morning-story-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - morning-story
+
   api:
     build:
       context: .
@@ -50,7 +58,9 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: development
-      DATABASE_URL: postgresql://morning_story:morning_story_dev@postgres:5432/morning_story_dev
+      # Update these with your Supabase credentials
+      DATABASE_URL: postgresql://postgres:your-password@db.lkkbfuzluexoygmszurn.supabase.co:5432/postgres
+      DIRECT_URL: postgresql://postgres:your-password@db.lkkbfuzluexoygmszurn.supabase.co:5432/postgres
       REDIS_URL: redis://redis:6379
       JWT_SECRET: dev_jwt_secret_change_in_production
       ENCRYPTION_KEY: dev_encryption_key_32_chars_long
@@ -59,8 +69,6 @@ services:
       - ./libs:/app/libs
       - /app/node_modules
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
     command: npm run dev
@@ -68,8 +76,6 @@ services:
       - morning-story
 
 volumes:
-  postgres_data:
-    driver: local
   redis_data:
     driver: local
 
