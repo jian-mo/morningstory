@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { EncryptionService } from '../encryption/encryption.service';
 import { Integration, IntegrationType } from '@prisma/client';
 
 @Injectable()
 export class IntegrationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private encryptionService: EncryptionService,
+  ) {}
 
   async findAll(userId: string): Promise<Integration[]> {
     return this.prisma.integration.findMany({
@@ -26,7 +30,7 @@ export class IntegrationsService {
   }
 
   async findOne(userId: string, type: IntegrationType): Promise<Integration | null> {
-    return this.prisma.integration.findUnique({
+    const integration = await this.prisma.integration.findUnique({
       where: {
         userId_type: {
           userId,
@@ -34,6 +38,16 @@ export class IntegrationsService {
         },
       },
     });
+
+    if (integration) {
+      // Decrypt tokens for use
+      integration.accessToken = this.encryptionService.decrypt(integration.accessToken);
+      if (integration.refreshToken) {
+        integration.refreshToken = this.encryptionService.decrypt(integration.refreshToken);
+      }
+    }
+
+    return integration;
   }
 
   async create(userId: string, type: IntegrationType, data: {
@@ -46,7 +60,10 @@ export class IntegrationsService {
       data: {
         userId,
         type,
-        ...data,
+        accessToken: this.encryptionService.encrypt(data.accessToken),
+        refreshToken: data.refreshToken ? this.encryptionService.encrypt(data.refreshToken) : null,
+        tokenExpiry: data.tokenExpiry,
+        metadata: data.metadata,
       },
     });
   }
@@ -59,6 +76,16 @@ export class IntegrationsService {
     isActive?: boolean;
     lastSyncedAt?: Date;
   }): Promise<Integration> {
+    const updateData: any = { ...data };
+    
+    if (data.accessToken) {
+      updateData.accessToken = this.encryptionService.encrypt(data.accessToken);
+    }
+    
+    if (data.refreshToken) {
+      updateData.refreshToken = this.encryptionService.encrypt(data.refreshToken);
+    }
+    
     return this.prisma.integration.update({
       where: {
         userId_type: {
@@ -66,7 +93,7 @@ export class IntegrationsService {
           type,
         },
       },
-      data,
+      data: updateData,
     });
   }
 

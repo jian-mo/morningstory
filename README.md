@@ -26,23 +26,91 @@ This bot aims to solve that!
 *   **Customizable Output:** Tailor the tone and format of your standup notes.
 *   **Multiple Interfaces:** Access through a CLI, a web interface, and potentially chat bots (Slack, Teams).
 
-## Tech Stack (Initial Thoughts)
+## Tech Stack
 
-*   **Backend:** Python (likely FastAPI)
-*   **Database:** PostgreSQL / SQLite (for local dev)
-*   **Frontend (Web):** React / Vue / Svelte (TBD)
-*   **LLM Interaction:** Via direct SDKs or LangChain
-*   **Deployment:** Docker, aiming for easy self-hosting and a potential managed SaaS version later.
+*   **Backend:** TypeScript with NestJS (enterprise-grade, modular architecture)
+*   **Database:** PostgreSQL (primary) + Redis (caching/jobs)
+*   **Frontend (Web):** React 18 with TypeScript (coming soon)
+*   **LLM Interaction:** OpenAI GPT-4 via LangChain.js
+*   **Authentication:** JWT with Passport.js strategies
+*   **Infrastructure:** Docker, Docker Compose, Kubernetes-ready
+*   **Monorepo:** Turbo for efficient builds
 
-## Current Status
+## Current Status - MVP Progress (65% Complete)
 
-**Day 1!** The project is just getting started. We're currently in the planning and initial setup phase.
+### ✅ Completed
+- **Project Foundation**: Monorepo structure with TypeScript, ESLint, Prettier
+- **Docker Environment**: PostgreSQL 15 + Redis 7 with health checks
+- **Database Schema**: Comprehensive Prisma models for users, integrations, standups
+- **NestJS API**: Modular architecture with Swagger documentation
+- **Authentication System**: JWT auth with registration/login endpoints
+- **Core Services**: User management, integration storage, standup CRUD operations
 
-The repository will be populated with code soon.
+### 🚧 In Progress
+- **GitHub Integration**: OAuth flow and API client for fetching commits, PRs, issues
+
+### 📋 Coming Next
+- OpenAI integration for intelligent standup generation
+- Encryption service for secure credential storage
+- Background job processing with BullMQ
+- CLI tool for easy command-line access
 
 ## Getting Started
 
-*(Instructions will be added here once the initial codebase is available.)*
+### Prerequisites
+- Node.js 20+ and npm 10+
+- Docker and Docker Compose
+- PostgreSQL 15 (or use Docker)
+- Redis 7 (or use Docker)
+
+### Quick Start
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/jian-mo/morningstory.git
+   cd morningstory
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. **Start Docker services**
+   ```bash
+   docker-compose up -d
+   ```
+
+5. **Run database migrations**
+   ```bash
+   cd apps/api
+   npx prisma generate
+   npx prisma migrate dev
+   ```
+
+6. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+7. **Access the API**
+   - API: http://localhost:3000
+   - Swagger Docs: http://localhost:3000/api
+
+### API Endpoints
+
+- `POST /auth/register` - Create new account
+- `POST /auth/login` - Login with email/password
+- `GET /auth/me` - Get current user profile
+- `GET /integrations` - List user integrations
+- `GET /standups` - Get standup history
+- `GET /standups/today` - Get today's standup
 
 ## Contributing
 

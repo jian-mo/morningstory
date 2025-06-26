@@ -7,6 +7,7 @@ import { IntegrationsModule } from './integrations/integrations.module';
 import { StandupsModule } from './standups/standups.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
+import { EncryptionModule } from './encryption/encryption.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { HealthModule } from './health/health.module';
       limit: 100,
     }]),
     PrismaModule,
+    EncryptionModule,
     AuthModule,
     UsersModule,
     IntegrationsModule,

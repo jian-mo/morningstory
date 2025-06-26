@@ -1,10 +1,12 @@
-import { Controller, Post, Body, UseGuards, Request, Get, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Post, Body, UseGuards, Request, Get, HttpCode, HttpStatus, Res } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GithubAuthGuard } from './guards/github-auth.guard';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { Response } from 'express';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -35,5 +37,23 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user profile' })
   getProfile(@Request() req: any) {
     return req.user;
+  }
+
+  @Get('github')
+  @UseGuards(GithubAuthGuard)
+  @ApiOperation({ summary: 'Login with GitHub' })
+  async githubAuth() {
+    // Passport will handle the redirect
+  }
+
+  @Get('github/callback')
+  @UseGuards(GithubAuthGuard)
+  @ApiExcludeEndpoint()
+  async githubAuthCallback(@Request() req: any, @Res() res: Response) {
+    const { access_token } = await this.authService.login(req.user);
+    
+    // Redirect to frontend with token
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    res.redirect(`${frontendUrl}/auth/callback?token=${access_token}`);
   }
 }
