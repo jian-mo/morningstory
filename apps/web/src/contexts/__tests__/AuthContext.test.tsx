@@ -81,10 +81,13 @@ describe('AuthContext', () => {
     consoleSpy.mockRestore()
   })
 
-  it('initializes with no user when no token in localStorage', () => {
+  it('initializes with no user when no token in localStorage', async () => {
     renderWithProviders()
 
-    expect(screen.getByTestId('loading')).toHaveTextContent('not-loading')
+    // Should not be loading when no token
+    await waitFor(() => {
+      expect(screen.getByTestId('loading')).toHaveTextContent('not-loading')
+    })
     expect(screen.getByTestId('authenticated')).toHaveTextContent('not-authenticated')
     expect(screen.getByTestId('user')).toHaveTextContent('no-user')
   })
