@@ -80,14 +80,26 @@ git push origin main
    - Choose Personal Access Token or GitHub App method
 3. **Generate Standups**: Your GitHub activity will be used to generate standups!
 
+## 🌐 Live Demo
+
+**Try the app now - no setup required!**
+
+- **🚀 Web App**: https://web-q0qt98ier-bigjos-projects.vercel.app
+- **🔧 API**: https://api-avwjnzlcf-bigjos-projects.vercel.app
+
+**Test it out:**
+1. Visit the web app → Click "Get Started" 
+2. Navigate to Integrations → Test GitHub connection
+3. API health check: `curl https://api-avwjnzlcf-bigjos-projects.vercel.app/health`
+
 ## 🔐 GitHub Connection Methods
 
 ### 1. GitHub Apps (Recommended) ⭐
 **One-click installation** - users just click "Install":
 
 **Setup**: Create GitHub App at [github.com/settings/apps/new](https://github.com/settings/apps/new)
-- **Webhook URL**: `https://your-api.vercel.app/webhooks/github`
-- **Homepage URL**: `https://your-app.vercel.app`
+- **Webhook URL**: `https://api-avwjnzlcf-bigjos-projects.vercel.app/webhooks/github`
+- **Homepage URL**: `https://web-q0qt98ier-bigjos-projects.vercel.app`
 - **Permissions**: Contents (Read), Pull requests (Read), Issues (Read)
 
 **Pros:**
@@ -211,7 +223,28 @@ npm run test:coverage
 
 ## Deployment Options
 
-### 🔥 Method 1: GitHub Actions (Recommended)
+### ⚡ Method 1: CLI Deployment (Recommended)
+**Direct deployment using Vercel CLI - what we use for live demo**
+
+```bash
+# 1. Get Vercel token from vercel.com/account/tokens
+# 2. Deploy API
+cd apps/api
+vercel --token YOUR_TOKEN --prod --yes
+
+# 3. Deploy Web (with API URL)
+cd apps/web
+vercel env add VITE_API_URL production
+vercel --token YOUR_TOKEN --prod --yes
+```
+
+**Features:**
+- ✅ **Instant deployment** - deploy in minutes
+- ✅ **Independent apps** - API and web deployed separately
+- ✅ **Simple environment setup** - direct token authentication
+- ✅ **Individual project control** - separate Vercel projects
+
+### 🔥 Method 2: GitHub Actions
 **Automated deployment with encrypted secrets**
 
 ```bash
@@ -226,16 +259,6 @@ git push origin main
 - ✅ **Encrypted GitHub Secrets** storage
 - ✅ **Auto-deploy on push** to main branch
 - ✅ **Preview deployments** for PRs
-- ✅ **Team collaboration** without sharing secrets
-
-### ⚡ Method 2: CLI Deployment
-**Direct deployment using Vercel CLI**
-
-```bash
-npm run vercel:init     # Initialize projects
-npm run vercel:env api  # Setup environment variables
-npm run deploy          # Deploy to production
-```
 
 ### 🌐 Method 3: Dashboard Deployment
 **Traditional deployment via Vercel dashboard**
