@@ -1,0 +1,23 @@
+# Ignore parent directories
+../../node_modules
+../../package.json
+../../package-lock.json
+../../turbo.json
+
+# Ignore development files
+src/
+prisma/
+dist/
+*.ts
+*.tsx
+*.spec.js
+*.test.js
+.env
+.env.*
+coverage/
+
+# Keep only essentials
+!index.js
+!package.json
+!package-lock.json
+!vercel.json
