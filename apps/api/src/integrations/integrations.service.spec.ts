@@ -188,4 +188,80 @@ describe('IntegrationsService', () => {
       });
     });
   });
+
+  describe('hasGitHubApp', () => {
+    it('should return true when integration has installationId', async () => {
+      const userId = 'user1';
+      const integrationWithApp = {
+        ...mockIntegration,
+        metadata: { installationId: 12345, username: 'testuser' },
+      };
+
+      mockPrismaService.integration.findUnique.mockResolvedValue(integrationWithApp);
+      mockEncryptionService.decrypt.mockReturnValue('decrypted-token');
+
+      const result = await service.hasGitHubApp(userId);
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when integration has no installationId', async () => {
+      const userId = 'user1';
+
+      mockPrismaService.integration.findUnique.mockResolvedValue(mockIntegration);
+      mockEncryptionService.decrypt.mockReturnValue('decrypted-token');
+
+      const result = await service.hasGitHubApp(userId);
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when no integration exists', async () => {
+      const userId = 'user1';
+
+      mockPrismaService.integration.findUnique.mockResolvedValue(null);
+
+      const result = await service.hasGitHubApp(userId);
+
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('getGitHubIntegrationType', () => {
+    it('should return "app" when integration has installationId', async () => {
+      const userId = 'user1';
+      const integrationWithApp = {
+        ...mockIntegration,
+        metadata: { installationId: 12345, username: 'testuser' },
+      };
+
+      mockPrismaService.integration.findUnique.mockResolvedValue(integrationWithApp);
+      mockEncryptionService.decrypt.mockReturnValue('decrypted-token');
+
+      const result = await service.getGitHubIntegrationType(userId);
+
+      expect(result).toBe('app');
+    });
+
+    it('should return "token" when integration has no installationId', async () => {
+      const userId = 'user1';
+
+      mockPrismaService.integration.findUnique.mockResolvedValue(mockIntegration);
+      mockEncryptionService.decrypt.mockReturnValue('decrypted-token');
+
+      const result = await service.getGitHubIntegrationType(userId);
+
+      expect(result).toBe('token');
+    });
+
+    it('should return null when no integration exists', async () => {
+      const userId = 'user1';
+
+      mockPrismaService.integration.findUnique.mockResolvedValue(null);
+
+      const result = await service.getGitHubIntegrationType(userId);
+
+      expect(result).toBeNull();
+    });
+  });
 });

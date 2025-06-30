@@ -3,7 +3,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 
 // Minimal app module for demo
-import { Module, Controller, Get } from '@nestjs/common';
+import { Module, Controller, Get, Post } from '@nestjs/common';
 
 @Controller()
 export class HealthController {
@@ -24,14 +24,88 @@ export class HealthController {
       description: 'Intelligent standup generation API',
       endpoints: {
         health: '/health',
-        docs: '/api'
+        docs: '/api',
+        testLogin: '/auth/test-login'
+      }
+    };
+  }
+}
+
+@Controller('auth')
+export class AuthController {
+  @Post('test-login')
+  testLogin() {
+    // Create a simple JWT-like token for testing
+    const token = Buffer.from(JSON.stringify({
+      userId: 'test-user-123',
+      email: 'test@example.com',
+      name: 'Test User',
+      iat: Date.now(),
+      exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+    })).toString('base64');
+    
+    return {
+      access_token: token,
+      user: {
+        id: 'test-user-123',
+        email: 'test@example.com',
+        name: 'Test User'
+      }
+    };
+  }
+
+  @Get('me')
+  getMe() {
+    // Return the test user profile
+    return {
+      id: 'test-user-123',
+      email: 'test@example.com',
+      name: 'Test User',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+}
+
+@Controller('integrations')
+export class IntegrationsController {
+  @Get()
+  getIntegrations() {
+    // Return empty integrations list for testing
+    return [];
+  }
+
+  @Get('github/app/install')
+  getGitHubAppInstall() {
+    // Return that GitHub App is not configured
+    return {
+      configured: false,
+      message: 'GitHub App integration is not set up yet. Please use Personal Access Token instead.'
+    };
+  }
+
+  @Post('github/connect')
+  connectGitHub() {
+    // Mock GitHub token connection
+    return {
+      success: true,
+      message: 'GitHub connected successfully',
+      integration: {
+        id: 'github-integration-123',
+        type: 'GITHUB',
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        metadata: {
+          username: 'test-user',
+          repositories: ['repo1', 'repo2']
+        }
       }
     };
   }
 }
 
 @Module({
-  controllers: [HealthController],
+  controllers: [HealthController, AuthController, IntegrationsController],
 })
 export class SimpleAppModule {}
 

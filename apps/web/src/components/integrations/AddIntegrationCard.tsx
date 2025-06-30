@@ -14,7 +14,7 @@ interface AddIntegrationCardProps {
 export function AddIntegrationCard({ type, description, isImplemented = false }: AddIntegrationCardProps) {
   const handleConnect = () => {
     if (type === 'GITHUB') {
-      window.location.href = '/api/auth/github'
+      window.location.href = '/connect-github'
     } else {
       alert(`${getIntegrationName(type)} integration coming soon!`)
     }

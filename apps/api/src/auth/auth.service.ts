@@ -51,4 +51,19 @@ export class AuthService {
       throw new UnauthorizedException('Invalid token');
     }
   }
+
+  async findOrCreateTestUser() {
+    const testEmail = 'test@example.com';
+    let user = await this.usersService.findByEmail(testEmail);
+    
+    if (!user) {
+      user = await this.usersService.create({
+        email: testEmail,
+        name: 'Test User',
+        password: null, // No password for test user
+      });
+    }
+    
+    return user;
+  }
 }

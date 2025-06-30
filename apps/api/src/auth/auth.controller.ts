@@ -41,9 +41,11 @@ export class AuthController {
 
   @Get('github')
   @UseGuards(GithubAuthGuard)
-  @ApiOperation({ summary: 'Login with GitHub' })
+  @ApiOperation({ summary: 'Login with GitHub (Legacy OAuth - use Personal Access Tokens instead)' })
   async githubAuth() {
     // Passport will handle the redirect
+    // NOTE: This endpoint is kept for legacy compatibility
+    // New users should use Personal Access Tokens via /integrations/github/connect
   }
 
   @Get('github/callback')
@@ -55,5 +57,16 @@ export class AuthController {
     // Redirect to frontend with token
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
     res.redirect(`${frontendUrl}/auth/callback?token=${access_token}`);
+  }
+
+  @Post('test-login')
+  @ApiOperation({ summary: 'Test login for development (creates/logs in test user)' })
+  async testLogin() {
+    if (process.env.NODE_ENV !== 'development') {
+      throw new Error('Test login only available in development mode');
+    }
+    
+    const testUser = await this.authService.findOrCreateTestUser();
+    return this.authService.login(testUser);
   }
 }

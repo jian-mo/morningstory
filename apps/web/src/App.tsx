@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { AuthCallback } from './pages/AuthCallback'
 import { Login } from './pages/Login'
 import { Integrations } from './pages/Integrations'
+import { ConnectGitHub } from './pages/ConnectGitHub'
 
 function App() {
   return (
@@ -15,6 +16,11 @@ function App() {
         <Route path="/integrations" element={
           <ProtectedRoute>
             <Integrations />
+          </ProtectedRoute>
+        } />
+        <Route path="/connect-github" element={
+          <ProtectedRoute>
+            <ConnectGitHub />
           </ProtectedRoute>
         } />
         <Route path="/dashboard" element={<Navigate to="/integrations" replace />} />

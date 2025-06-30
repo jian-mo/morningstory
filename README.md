@@ -15,6 +15,106 @@ Do you often find yourself:
 
 This bot aims to solve that!
 
+## 🚀 Quick Start
+
+### Prerequisites
+- Node.js 18+ and npm
+- Docker and Docker Compose
+- Git
+
+### Setup (2 minutes)
+
+1. **Clone and install:**
+   ```bash
+   git clone <repository-url>
+   cd standupbot
+   npm install
+   ```
+
+2. **Start the development environment:**
+   ```bash
+   ./scripts/setup-local.sh
+   ```
+
+3. **Start the applications:**
+   ```bash
+   # Terminal 1: Start API server
+   cd apps/api && npm run dev:full
+   
+   # Terminal 2: Start web app
+   cd apps/web && npm run dev
+   ```
+
+4. **Open your browser:**
+   - Web App: http://localhost:3001
+   - API Docs: http://localhost:3000/api
+
+### Getting Started
+
+1. **Login**: Click "Get Started" on the login page
+2. **Connect Integrations**: 
+   - Go to Integrations page
+   - Click "Connect" on GitHub card
+   - Create a Personal Access Token at https://github.com/settings/tokens/new
+   - Required permissions: `repo`, `user:email`, `read:org`
+   - Paste the token in the app
+3. **Generate Standups**: Your GitHub activity will now be used to generate standups!
+
+> **Why Personal Access Tokens?** Unlike OAuth apps (which require developer setup), Personal Access Tokens let individual users connect their own GitHub accounts without any configuration from the app developer.
+
+## 🔐 GitHub Connection Methods
+
+### 1. GitHub Apps (Recommended) ⭐
+The modern way to connect - users just click "Install":
+
+**How it works:**
+1. User clicks "Connect GitHub" → "Install GitHub App"
+2. Redirected to GitHub to choose repositories
+3. Clicks "Install" - Done! No tokens needed
+
+**Pros:**
+- ✅ **One-click setup** - no manual token creation
+- ✅ **Fine-grained permissions** - per repository
+- ✅ **Automatic token refresh** - never expires
+- ✅ **Higher rate limits** - 5,000 requests/hour per installation
+- ✅ **Best security** - tokens are temporary and scoped
+
+**Cons:**
+- ❌ Requires creating a GitHub App (one-time developer setup)
+- ❌ More complex initial configuration
+
+### 2. Personal Access Tokens (Alternative)
+Manual but simple - users create their own tokens:
+
+**How it works:**
+1. User creates token at github.com/settings/tokens
+2. Copies and pastes token into our app
+3. We validate and store it securely
+
+**Pros:**
+- ✅ **No app setup required** - works immediately
+- ✅ **User control** - they manage their own tokens
+- ✅ **Simple implementation** - just API calls
+
+**Cons:**
+- ❌ **Manual process** - users must create tokens
+- ❌ **Token management** - users must renew expired tokens
+- ❌ **Less convenient** - copy/paste required
+
+### 3. OAuth Apps (Legacy)
+Traditional OAuth flow - being phased out by GitHub:
+
+**Pros:**
+- ✅ Familiar "Login with GitHub" button
+- ✅ No manual token creation
+
+**Cons:**
+- ❌ **All-or-nothing permissions** - can't select specific repos
+- ❌ **Shared rate limits** - all users share the same limit
+- ❌ **Being deprecated** - GitHub recommends Apps instead
+
+> **Best Practice**: Use GitHub Apps for production deployments. They provide the best user experience and security. Personal Access Tokens are great for development and MVPs.
+
 ## What We're Building (Core Features - Planned)
 
 *   **Smart Integrations:** Connects to your favorite Project Management tools (Asana, Jira, Trello, etc.) and Git hosting services (GitHub, GitLab).
