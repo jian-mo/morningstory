@@ -1,8 +1,6 @@
-# Ignore parent directories
-../../node_modules
-../../package.json
-../../package-lock.json
-../../turbo.json
+# Ignore everything from parent directories
+../../*
+../**
 
 # Ignore development files
 src/
