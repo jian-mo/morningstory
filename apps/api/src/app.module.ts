@@ -8,6 +8,7 @@ import { StandupsModule } from './standups/standups.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
 import { EncryptionModule } from './encryption/encryption.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { EncryptionModule } from './encryption/encryption.module';
     IntegrationsModule,
     StandupsModule,
     HealthModule,
+    WebhooksModule,
   ],
 })
 export class AppModule {}

@@ -54,6 +54,7 @@ jobs:
           if [ -n "${{ secrets.GITHUB_APP_ID }}" ]; then
             echo "${{ secrets.GITHUB_APP_ID }}" | vercel env add GITHUB_APP_ID production --force --token $VERCEL_TOKEN
             echo "${{ secrets.GITHUB_APP_NAME }}" | vercel env add GITHUB_APP_NAME production --force --token $VERCEL_TOKEN
+            echo "${{ secrets.GITHUB_WEBHOOK_SECRET }}" | vercel env add GITHUB_WEBHOOK_SECRET production --force --token $VERCEL_TOKEN
             echo "${{ secrets.GITHUB_APP_PRIVATE_KEY }}" | vercel env add GITHUB_APP_PRIVATE_KEY production --force --token $VERCEL_TOKEN
           fi
           

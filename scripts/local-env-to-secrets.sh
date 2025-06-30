@@ -99,6 +99,7 @@ set_secret_from_env "GITHUB_CLIENT_ID"
 set_secret_from_env "GITHUB_CLIENT_SECRET"
 set_secret_from_env "GITHUB_APP_ID"
 set_secret_from_env "GITHUB_APP_NAME"
+set_secret_from_env "GITHUB_WEBHOOK_SECRET"
 set_secret_from_env "GITHUB_APP_PRIVATE_KEY"
 
 echo ""
