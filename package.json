@@ -34,7 +34,9 @@
     "deploy:preview": "./scripts/deploy.sh all",
     "vercel:init": "./scripts/vercel-init.sh",
     "vercel:env": "./scripts/setup-env.sh",
-    "vercel:status": "./scripts/vercel-status.sh"
+    "vercel:status": "./scripts/vercel-status.sh",
+    "secrets:setup": "./scripts/setup-github-secrets.sh",
+    "secrets:upload": "./scripts/local-env-to-secrets.sh"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

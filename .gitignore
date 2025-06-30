@@ -16,6 +16,9 @@ coverage/
 .env
 .env.local
 .env.*.local
+.env.production
+.env.secrets
+.env.deploy
 
 # Logs
 logs/
