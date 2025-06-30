@@ -70,10 +70,43 @@ app.get('/integrations', (req, res) => {
 });
 
 app.get('/integrations/github/app/install', (req, res) => {
-  res.json({
-    configured: false,
-    message: 'GitHub App integration is not set up yet. Please use Personal Access Token instead.'
+  // Check if GitHub App environment variables are configured
+  const isConfigured = !!(
+    process.env.GITHUB_APP_ID && 
+    process.env.GITHUB_APP_NAME && 
+    process.env.GITHUB_APP_PRIVATE_KEY
+  );
+
+  // Debug logging
+  console.log('GitHub App configuration check:', {
+    GITHUB_APP_ID: !!process.env.GITHUB_APP_ID,
+    GITHUB_APP_NAME: !!process.env.GITHUB_APP_NAME,
+    GITHUB_APP_PRIVATE_KEY: !!process.env.GITHUB_APP_PRIVATE_KEY,
+    isConfigured
   });
+
+  if (isConfigured) {
+    // Generate installation URL with user state
+    const userId = 'test-user-123'; // In real implementation, get from JWT token
+    const state = Buffer.from(JSON.stringify({ userId })).toString('base64');
+    const installationUrl = `https://github.com/apps/${process.env.GITHUB_APP_NAME}/installations/new?state=${state}`;
+    
+    res.json({
+      configured: true,
+      installationUrl,
+      message: 'GitHub App is ready for installation'
+    });
+  } else {
+    res.json({
+      configured: false,
+      message: 'GitHub App integration is not set up yet. Please use Personal Access Token instead.',
+      debug: {
+        hasAppId: !!process.env.GITHUB_APP_ID,
+        hasAppName: !!process.env.GITHUB_APP_NAME,
+        hasPrivateKey: !!process.env.GITHUB_APP_PRIVATE_KEY
+      }
+    });
+  }
 });
 
 app.post('/integrations/github/connect', (req, res) => {
