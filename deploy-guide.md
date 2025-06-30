@@ -125,15 +125,24 @@ npm run secrets:upload
 
 ---
 
-## 🔥 Method 2: GitHub Actions with Local .env
+## 🔥 Method 2: GitHub Actions (Improved)
 
-Automated deployment with encrypted secrets - great for teams.
+**Enhanced automated deployment** with dynamic API URL detection and improved error handling.
 
 ### Why This Method?
-✅ **Automated** - Push to deploy  
+✅ **Automated** - Push to deploy with zero manual steps
+✅ **Smart linking** - Web app automatically gets correct API URL  
 ✅ **Team-friendly** - Easy collaboration without sharing secrets  
 ✅ **Branch-based** - Production & preview deployments  
-✅ **Secure** - Secrets encrypted in GitHub  
+✅ **Secure** - Secrets encrypted in GitHub
+✅ **Error handling** - Clear feedback on deployment status
+
+### ✨ New Features
+- **🔗 Dynamic API URL**: Web app automatically connects to deployed API  
+- **📝 Smart PR comments**: Shows deployment URLs with status info
+- **🔄 Bidirectional linking**: API gets web URL for CORS configuration
+- **🛡️ Error resilience**: Graceful fallbacks and clear error messages
+- **📊 Deployment summary**: Complete overview in GitHub Actions logs
 
 ### Quick Start
 ```bash
@@ -147,6 +156,12 @@ npm run secrets:upload
 # 3. Push to deploy
 git push origin main
 ```
+
+**What happens automatically:**
+1. 🚀 API deploys with environment variables
+2. 🌐 Web app deploys with correct API URL
+3. 🔄 API gets web URL for CORS settings  
+4. 💬 PR gets comment with both deployment URLs
 
 ### Management Commands
 ```bash

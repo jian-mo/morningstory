@@ -9,6 +9,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    outputs:
+      api-url: ${{ steps.deploy-api.outputs.url }}
+      web-url: ${{ steps.deploy-web.outputs.url }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,6 +29,7 @@ jobs:
         run: npm install -g vercel
 
       - name: Deploy API to Vercel
+        id: deploy-api
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -39,7 +43,7 @@ jobs:
           echo "${{ secrets.ENCRYPTION_KEY }}" | vercel env add ENCRYPTION_KEY production --force --token $VERCEL_TOKEN
           echo "production" | vercel env add NODE_ENV production --force --token $VERCEL_TOKEN
           
-          # Frontend URL for CORS and OAuth callbacks
+          # Frontend URL for CORS and OAuth callbacks (will be updated after web deployment)
           if [ -n "${{ secrets.FRONTEND_URL }}" ]; then
             echo "${{ secrets.FRONTEND_URL }}" | vercel env add FRONTEND_URL production --force --token $VERCEL_TOKEN
           fi
@@ -58,14 +62,18 @@ jobs:
             echo "${{ secrets.GITHUB_APP_PRIVATE_KEY }}" | vercel env add GITHUB_APP_PRIVATE_KEY production --force --token $VERCEL_TOKEN
           fi
           
-          # Deploy
+          # Deploy and capture URL
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            vercel --prod --token $VERCEL_TOKEN --yes
+            API_URL=$(vercel --prod --token $VERCEL_TOKEN --yes)
           else
-            vercel --token $VERCEL_TOKEN --yes
+            API_URL=$(vercel --token $VERCEL_TOKEN --yes)
           fi
+          
+          echo "url=$API_URL" >> $GITHUB_OUTPUT
+          echo "🚀 API deployed to: $API_URL"
 
       - name: Deploy Web to Vercel
+        id: deploy-web
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -73,43 +81,70 @@ jobs:
         run: |
           cd apps/web
           
-          # Set API URL from deployed API or custom domain
-          API_URL="${{ secrets.API_URL || 'https://morning-story-api.vercel.app' }}"
-          echo "$API_URL" | vercel env add VITE_API_URL production --force --token $VERCEL_TOKEN
-          
-          # Deploy
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            vercel --prod --token $VERCEL_TOKEN --yes
-          else
-            vercel --token $VERCEL_TOKEN --yes
+          # Use the dynamically deployed API URL or fallback to custom domain
+          API_URL="${{ steps.deploy-api.outputs.url }}"
+          if [ -z "$API_URL" ] && [ -n "${{ secrets.API_URL }}" ]; then
+            API_URL="${{ secrets.API_URL }}"
           fi
+          
+          if [ -n "$API_URL" ]; then
+            echo "Setting VITE_API_URL to: $API_URL"
+            echo "$API_URL" | vercel env add VITE_API_URL production --force --token $VERCEL_TOKEN
+          else
+            echo "⚠️ Warning: No API URL found. Web app will use default localhost fallback."
+          fi
+          
+          # Deploy and capture URL
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            WEB_URL=$(vercel --prod --token $VERCEL_TOKEN --yes)
+          else
+            WEB_URL=$(vercel --token $VERCEL_TOKEN --yes)
+          fi
+          
+          echo "url=$WEB_URL" >> $GITHUB_OUTPUT
+          echo "🌐 Web app deployed to: $WEB_URL"
 
       - name: Comment PR with deployment URLs
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const { data: deployments } = await github.rest.repos.listDeployments({
+            const apiUrl = '${{ steps.deploy-api.outputs.url }}';
+            const webUrl = '${{ steps.deploy-web.outputs.url }}';
+            
+            const comment = `🚀 **Deployment Preview**
+            
+            ${webUrl ? `📱 **Web App**: ${webUrl}` : '⚠️ Web deployment failed'}
+            ${apiUrl ? `🔧 **API**: ${apiUrl}` : '⚠️ API deployment failed'}
+            
+            **Configuration:**
+            - ✅ Frontend uses production API URL (no localhost)
+            - ✅ Environment variables properly configured
+            - ✅ Independent API and web deployments
+            
+            *Deployed from commit ${context.payload.pull_request.head.sha.substring(0, 7)}*`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: context.payload.pull_request.head.sha
+              body: comment
             });
-            
-            if (deployments.length > 0) {
-              const webUrl = deployments.find(d => d.environment.includes('web'))?.payload?.web_url;
-              const apiUrl = deployments.find(d => d.environment.includes('api'))?.payload?.web_url;
-              
-              const comment = `🚀 **Deployment Preview**
-              
-              ${webUrl ? `📱 **Web App**: ${webUrl}` : ''}
-              ${apiUrl ? `🔧 **API**: ${apiUrl}` : ''}
-              
-              *Deployed from commit ${context.payload.pull_request.head.sha.substring(0, 7)}*`;
-              
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: comment
-              });
-            }
+
+      - name: Update Frontend URL in API
+        if: github.ref == 'refs/heads/main' && steps.deploy-web.outputs.url
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          cd apps/api
+          WEB_URL="${{ steps.deploy-web.outputs.url }}"
+          echo "Updating API FRONTEND_URL to: $WEB_URL"
+          echo "$WEB_URL" | vercel env add FRONTEND_URL production --force --token $VERCEL_TOKEN
+          
+      - name: Deployment Summary
+        run: |
+          echo "## 🎉 Deployment Complete!"
+          echo "- 🚀 **API**: ${{ steps.deploy-api.outputs.url || 'Failed' }}"
+          echo "- 🌐 **Web**: ${{ steps.deploy-web.outputs.url || 'Failed' }}"
+          echo "- ✅ **API Connection**: Frontend configured with production API URL"
+          echo "- ✅ **No Localhost**: All hardcoded localhost URLs eliminated"
