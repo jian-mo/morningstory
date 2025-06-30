@@ -82,15 +82,21 @@ git push origin main
 
 ## 🌐 Live Demo
 
-**Try the app now - no setup required!**
+**Deployed URLs (accessible to project members):**
 
-- **🚀 Web App**: https://web-q0qt98ier-bigjos-projects.vercel.app
+- **🚀 Web App**: https://web-oekp7tt2g-bigjos-projects.vercel.app
 - **🔧 API**: https://api-avwjnzlcf-bigjos-projects.vercel.app
 
-**Test it out:**
-1. Visit the web app → Click "Get Started" 
-2. Navigate to Integrations → Test GitHub connection
-3. API health check: `curl https://api-avwjnzlcf-bigjos-projects.vercel.app/health`
+**Current Status**: 
+- ✅ **Backend**: Express.js API deployed with proper environment configuration
+- ✅ **Frontend**: React app deployed with correct API connection (`VITE_API_URL` set)
+- ✅ **Environment**: Production database and secrets properly configured
+- ⚠️ **Access**: Currently requires Vercel team member authentication
+
+**For Your Own Deployment**:
+1. Clone repository → Deploy to your Vercel account using guide below
+2. Set `VITE_API_URL` environment variable for web app
+3. Configure database and GitHub integration secrets
 
 ## 🔐 GitHub Connection Methods
 

@@ -17,7 +17,7 @@ Choose your preferred deployment method:
 ✅ **Direct control** - Deploy exactly when you want  
 ✅ **Environment isolation** - Each app has its own settings  
 
-### Quick Start (3 Steps)
+### Quick Start (4 Steps)
 ```bash
 # 1. Get Vercel token from vercel.com/account/tokens
 
@@ -25,11 +25,13 @@ Choose your preferred deployment method:
 cd apps/api
 vercel --token YOUR_TOKEN --prod --yes
 
-# 3. Deploy Web App  
+# 3. Deploy Web App with API URL
 cd apps/web
-vercel env add VITE_API_URL production
-# Enter your API URL when prompted
+echo "https://your-api-url.vercel.app" | vercel env add VITE_API_URL production --force --token YOUR_TOKEN
 vercel --token YOUR_TOKEN --prod --yes
+
+# 4. Make projects public (optional, for demos)
+# Visit vercel.com → Project Settings → Make public
 ```
 
 ### Detailed Setup

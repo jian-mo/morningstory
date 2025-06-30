@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Github, Key, ExternalLink, CheckCircle, AlertCircle, Zap, Shield } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
+import { API_ENDPOINTS } from '../config/env'
 
 export function ConnectGitHub() {
   const [selectedMethod, setSelectedMethod] = useState<'app' | 'token'>('app')
@@ -14,7 +15,7 @@ export function ConnectGitHub() {
   useEffect(() => {
     const checkGitHubAppConfig = async () => {
       try {
-        const response = await fetch('http://localhost:3000/integrations/github/app/install', {
+        const response = await fetch(API_ENDPOINTS.integrations.github.appInstall, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -45,7 +46,7 @@ export function ConnectGitHub() {
     
     setIsValidating(true)
     try {
-      const response = await fetch('http://localhost:3000/integrations/github/connect', {
+      const response = await fetch(API_ENDPOINTS.integrations.github.connect, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,7 +71,7 @@ export function ConnectGitHub() {
 
   const handleGitHubAppConnect = async () => {
     try {
-      const response = await fetch('http://localhost:3000/integrations/github/app/install', {
+      const response = await fetch(API_ENDPOINTS.integrations.github.appInstall, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,

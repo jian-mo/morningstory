@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { User, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { API_ENDPOINTS } from '../config/env'
 
 export function Login() {
   const { login } = useAuth()
@@ -13,7 +14,7 @@ export function Login() {
     setIsLoading(true)
     try {
       // Call the test login API endpoint
-      const response = await fetch('http://localhost:3000/auth/test-login', {
+      const response = await fetch(API_ENDPOINTS.auth.testLogin, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
