@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../src/app.module';
+import { AppModule } from '../dist/apps/api/src/app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
@@ -7,18 +7,23 @@ let app: any;
 
 async function createApp() {
   if (!app) {
-    app = await NestFactory.create(AppModule);
+    app = await NestFactory.create(AppModule, {
+      logger: ['error', 'warn'],
+    });
     
     // Enable CORS
     app.enableCors({
       origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.FRONTEND_URL || 'https://your-app.vercel.app']
+        ? [process.env.FRONTEND_URL || 'https://morning-story-web.vercel.app']
         : ['http://localhost:3001'],
       credentials: true,
     });
 
     // Global validation pipe
-    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalPipes(new ValidationPipe({
+      whitelist: true,
+      transform: true,
+    }));
 
     // Swagger setup
     const config = new DocumentBuilder()
@@ -37,6 +42,12 @@ async function createApp() {
 }
 
 export default async function handler(req: any, res: any) {
-  const app = await createApp();
-  return app.getHttpAdapter().getInstance()(req, res);
+  try {
+    const app = await createApp();
+    const instance = app.getHttpAdapter().getInstance();
+    return instance(req, res);
+  } catch (error) {
+    console.error('Handler error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 }
