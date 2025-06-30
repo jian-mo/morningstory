@@ -89,15 +89,30 @@ git push origin main
 
 **Current Status**: 
 - ✅ **Backend**: Express.js API deployed with proper environment configuration
-- ✅ **Frontend**: React app deployed with centralized env config (no more hardcoded localhost URLs)
+- ✅ **Frontend**: React app deployed with centralized env config (no hardcoded localhost URLs)
 - ✅ **Environment**: Production database and secrets properly configured  
-- ✅ **API Connection**: Frontend now correctly connects to production API via `VITE_API_URL`
-- ⚠️ **Access**: Currently requires Vercel team member authentication
+- ✅ **API Connection**: Frontend correctly connects to production API via `VITE_API_URL`
+- ⚠️ **Access**: Team account requires authentication (deploy to personal Vercel for public access)
 
-**For Your Own Deployment**:
-1. Clone repository → Deploy to your Vercel account using guide below
-2. Set `VITE_API_URL` environment variable for web app
-3. Configure database and GitHub integration secrets
+**For Public Access**:
+Deploy to your own Vercel account (free) for unrestricted access:
+
+```bash
+# 1. Clone and setup
+git clone https://github.com/jian-mo/morningstory.git
+cd morningstory
+
+# 2. Deploy API
+cd apps/api
+vercel --prod --yes
+
+# 3. Deploy Web App (with API URL)
+cd ../web
+echo "https://your-api-url.vercel.app" | vercel env add VITE_API_URL production --force
+vercel --prod --yes
+```
+
+**What's Fixed**: ✅ Frontend now uses `VITE_API_URL` instead of hardcoded localhost URLs
 
 ## 🔐 GitHub Connection Methods
 

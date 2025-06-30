@@ -3,6 +3,7 @@
   "outputDirectory": "dist",
   "installCommand": "npm install --ignore-scripts",
   "framework": "vite",
+  "public": true,
   "rewrites": [
     {
       "source": "/(.*)",
