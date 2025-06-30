@@ -82,37 +82,41 @@ git push origin main
 
 ## 🌐 Live Demo
 
-**Latest Deployment URLs:**
+**🌐 Fixed Production URLs:**
 
-- **🚀 Web App**: https://web-quhbib299-bigjos-projects.vercel.app  
-- **🔧 API**: https://api-avwjnzlcf-bigjos-projects.vercel.app
+- **🚀 Web App**: https://morning-story-web.vercel.app  
+- **🔧 API**: https://morning-story-api.vercel.app
 
 **Current Status**: 
-- ✅ **Backend**: Express.js API deployed with proper environment configuration
-- ✅ **Frontend**: React app deployed with centralized env config (no hardcoded localhost URLs)
-- ✅ **Environment**: Production database and secrets properly configured  
-- ✅ **API Connection**: Frontend correctly connects to production API via `VITE_API_URL`
-- ⚠️ **Access**: Team account requires authentication (deploy to personal Vercel for public access)
+- 🎉 **FIXED DOMAINS WORKING!** Both apps accessible with predictable URLs
+- ✅ **Backend**: Express.js API at https://morning-story-api.vercel.app
+- ✅ **Frontend**: React app at https://morning-story-web.vercel.app  
+- ✅ **API Connection**: Frontend connects to fixed API domain (no localhost)
+- ✅ **Environment**: Production database and secrets properly configured
+- 🚀 **Public Access**: Fixed domains work publicly!
 
-**For Public Access**:
-Deploy to your own Vercel account (free) for unrestricted access:
+**🎯 Easy Deployment**:
+Deploy with fixed, predictable URLs - no manual configuration needed:
 
 ```bash
 # 1. Clone and setup
 git clone https://github.com/jian-mo/morningstory.git
 cd morningstory
 
-# 2. Deploy API
+# 2. Deploy API (gets fixed domain: morning-story-api.vercel.app)
 cd apps/api
 vercel --prod --yes
 
-# 3. Deploy Web App (with API URL)
-cd ../web
-echo "https://your-api-url.vercel.app" | vercel env add VITE_API_URL production --force
+# 3. Deploy Web App (automatically connects to API)
+cd ../web  
 vercel --prod --yes
 ```
 
-**What's Fixed**: ✅ Frontend now uses `VITE_API_URL` instead of hardcoded localhost URLs
+**🌟 Benefits of Fixed Domains**:
+- ✅ **Predictable URLs**: Always know where your app is deployed
+- ✅ **No Manual Config**: Frontend automatically connects to API
+- ✅ **Easy Updates**: Redeploy without changing any URLs
+- ✅ **Simple Sharing**: Consistent URLs for demos and documentation
 
 ## 🔐 GitHub Connection Methods
 

@@ -9,9 +9,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    outputs:
-      api-url: ${{ steps.deploy-api.outputs.url }}
-      web-url: ${{ steps.deploy-web.outputs.url }}
+    env:
+      # Fixed domain names for predictable URLs
+      API_DOMAIN: "https://morning-story-api.vercel.app"
+      WEB_DOMAIN: "https://morning-story-web.vercel.app"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,7 +30,6 @@ jobs:
         run: npm install -g vercel
 
       - name: Deploy API to Vercel
-        id: deploy-api
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -43,10 +43,8 @@ jobs:
           echo "${{ secrets.ENCRYPTION_KEY }}" | vercel env add ENCRYPTION_KEY production --force --token $VERCEL_TOKEN
           echo "production" | vercel env add NODE_ENV production --force --token $VERCEL_TOKEN
           
-          # Frontend URL for CORS and OAuth callbacks (will be updated after web deployment)
-          if [ -n "${{ secrets.FRONTEND_URL }}" ]; then
-            echo "${{ secrets.FRONTEND_URL }}" | vercel env add FRONTEND_URL production --force --token $VERCEL_TOKEN
-          fi
+          # Use fixed web domain for CORS
+          echo "$WEB_DOMAIN" | vercel env add FRONTEND_URL production --force --token $VERCEL_TOKEN
           
           # GitHub Integration (optional)
           if [ -n "${{ secrets.GITHUB_CLIENT_ID }}" ]; then
@@ -62,18 +60,16 @@ jobs:
             echo "${{ secrets.GITHUB_APP_PRIVATE_KEY }}" | vercel env add GITHUB_APP_PRIVATE_KEY production --force --token $VERCEL_TOKEN
           fi
           
-          # Deploy and capture URL
+          # Deploy to fixed domain
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            API_URL=$(vercel --prod --token $VERCEL_TOKEN --yes)
+            vercel --prod --token $VERCEL_TOKEN --yes
           else
-            API_URL=$(vercel --token $VERCEL_TOKEN --yes)
+            vercel --token $VERCEL_TOKEN --yes
           fi
           
-          echo "url=$API_URL" >> $GITHUB_OUTPUT
-          echo "🚀 API deployed to: $API_URL"
+          echo "🚀 API deployed to: $API_DOMAIN"
 
       - name: Deploy Web to Vercel
-        id: deploy-web
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -81,46 +77,34 @@ jobs:
         run: |
           cd apps/web
           
-          # Use the dynamically deployed API URL or fallback to custom domain
-          API_URL="${{ steps.deploy-api.outputs.url }}"
-          if [ -z "$API_URL" ] && [ -n "${{ secrets.API_URL }}" ]; then
-            API_URL="${{ secrets.API_URL }}"
-          fi
+          # Use fixed API domain
+          echo "Setting VITE_API_URL to: $API_DOMAIN"
+          echo "$API_DOMAIN" | vercel env add VITE_API_URL production --force --token $VERCEL_TOKEN
           
-          if [ -n "$API_URL" ]; then
-            echo "Setting VITE_API_URL to: $API_URL"
-            echo "$API_URL" | vercel env add VITE_API_URL production --force --token $VERCEL_TOKEN
-          else
-            echo "⚠️ Warning: No API URL found. Web app will use default localhost fallback."
-          fi
-          
-          # Deploy and capture URL
+          # Deploy to fixed domain
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            WEB_URL=$(vercel --prod --token $VERCEL_TOKEN --yes)
+            vercel --prod --token $VERCEL_TOKEN --yes
           else
-            WEB_URL=$(vercel --token $VERCEL_TOKEN --yes)
+            vercel --token $VERCEL_TOKEN --yes
           fi
           
-          echo "url=$WEB_URL" >> $GITHUB_OUTPUT
-          echo "🌐 Web app deployed to: $WEB_URL"
+          echo "🌐 Web app deployed to: $WEB_DOMAIN"
 
       - name: Comment PR with deployment URLs
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const apiUrl = '${{ steps.deploy-api.outputs.url }}';
-            const webUrl = '${{ steps.deploy-web.outputs.url }}';
-            
             const comment = `🚀 **Deployment Preview**
             
-            ${webUrl ? `📱 **Web App**: ${webUrl}` : '⚠️ Web deployment failed'}
-            ${apiUrl ? `🔧 **API**: ${apiUrl}` : '⚠️ API deployment failed'}
+            📱 **Web App**: ${{ env.WEB_DOMAIN }}
+            🔧 **API**: ${{ env.API_DOMAIN }}
             
             **Configuration:**
-            - ✅ Frontend uses production API URL (no localhost)
-            - ✅ Environment variables properly configured
-            - ✅ Independent API and web deployments
+            - ✅ Fixed domain names (predictable URLs)
+            - ✅ Frontend connects to: ${{ env.API_DOMAIN }}
+            - ✅ API accepts requests from: ${{ env.WEB_DOMAIN }}
+            - ✅ No localhost dependencies
             
             *Deployed from commit ${context.payload.pull_request.head.sha.substring(0, 7)}*`;
             
@@ -130,21 +114,12 @@ jobs:
               repo: context.repo.repo,
               body: comment
             });
-
-      - name: Update Frontend URL in API
-        if: github.ref == 'refs/heads/main' && steps.deploy-web.outputs.url
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          cd apps/api
-          WEB_URL="${{ steps.deploy-web.outputs.url }}"
-          echo "Updating API FRONTEND_URL to: $WEB_URL"
-          echo "$WEB_URL" | vercel env add FRONTEND_URL production --force --token $VERCEL_TOKEN
           
       - name: Deployment Summary
         run: |
           echo "## 🎉 Deployment Complete!"
-          echo "- 🚀 **API**: ${{ steps.deploy-api.outputs.url || 'Failed' }}"
-          echo "- 🌐 **Web**: ${{ steps.deploy-web.outputs.url || 'Failed' }}"
-          echo "- ✅ **API Connection**: Frontend configured with production API URL"
-          echo "- ✅ **No Localhost**: All hardcoded localhost URLs eliminated"
+          echo "- 🚀 **API**: $API_DOMAIN"
+          echo "- 🌐 **Web**: $WEB_DOMAIN" 
+          echo "- ✅ **Fixed Domains**: Predictable, easy-to-remember URLs"
+          echo "- ✅ **API Connection**: $WEB_DOMAIN → $API_DOMAIN"
+          echo "- ✅ **No Manual Config**: Everything automated"

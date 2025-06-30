@@ -1,7 +1,6 @@
 {
   "version": 2,
   "public": true,
-  "name": "morning-story-api",
   "builds": [
     {
       "src": "index.js",

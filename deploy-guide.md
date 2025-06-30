@@ -4,35 +4,33 @@ Choose your preferred deployment method:
 
 ## ⚡ Method 1: CLI Deployment (Recommended)
 
-**Best approach**: Direct deployment using Vercel CLI - simple, fast, and reliable.
+**Best approach**: Direct deployment with fixed domains - predictable and simple.
 
-**🌐 Live Demo**: See it in action at:
-- **Web**: https://web-q0qt98ier-bigjos-projects.vercel.app  
-- **API**: https://api-avwjnzlcf-bigjos-projects.vercel.app
+**🌐 Fixed Production URLs**:
+- **Web**: https://morning-story-web.vercel.app  
+- **API**: https://morning-story-api.vercel.app
 
 ### Why This Method?
+✅ **Fixed domains** - Predictable URLs that never change
+✅ **Zero configuration** - Frontend automatically connects to API
 ✅ **Instant deployment** - Deploy in under 5 minutes  
 ✅ **Independent apps** - API and web deployed separately  
-✅ **Simple setup** - Just need a Vercel token  
-✅ **Direct control** - Deploy exactly when you want  
-✅ **Environment isolation** - Each app has its own settings  
+✅ **Simple setup** - Just need a Vercel token
 
-### Quick Start (4 Steps)
+### Quick Start (3 Steps)
 ```bash
 # 1. Get Vercel token from vercel.com/account/tokens
 
-# 2. Deploy API (replace YOUR_TOKEN)
+# 2. Deploy API (gets fixed domain: morning-story-api.vercel.app)
 cd apps/api
 vercel --token YOUR_TOKEN --prod --yes
 
-# 3. Deploy Web App with API URL
+# 3. Deploy Web App (automatically connects to API)
 cd apps/web
-echo "https://your-api-url.vercel.app" | vercel env add VITE_API_URL production --force --token YOUR_TOKEN
 vercel --token YOUR_TOKEN --prod --yes
-
-# 4. Make projects public (optional, for demos)
-# Visit vercel.com → Project Settings → Make public
 ```
+
+**That's it!** No manual URL configuration needed - the web app automatically connects to `morning-story-api.vercel.app`.
 
 ### Detailed Setup
 
