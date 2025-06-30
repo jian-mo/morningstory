@@ -27,7 +27,14 @@
     "db:migrate": "cd apps/api && npm run prisma:migrate",
     "db:generate": "cd apps/api && npm run prisma:generate",
     "db:reset": "cd apps/api && npx prisma migrate reset --force",
-    "deploy:aws": "./scripts/deploy-aws.sh"
+    "deploy:aws": "./scripts/deploy-aws.sh",
+    "deploy": "./scripts/deploy.sh all --production",
+    "deploy:web": "./scripts/deploy.sh web --production",
+    "deploy:api": "./scripts/deploy.sh api --production",
+    "deploy:preview": "./scripts/deploy.sh all",
+    "vercel:init": "./scripts/vercel-init.sh",
+    "vercel:env": "./scripts/setup-env.sh",
+    "vercel:status": "./scripts/vercel-status.sh"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
