@@ -82,15 +82,16 @@ git push origin main
 
 ## 🌐 Live Demo
 
-**Deployed URLs (accessible to project members):**
+**Latest Deployment URLs:**
 
-- **🚀 Web App**: https://web-oekp7tt2g-bigjos-projects.vercel.app
+- **🚀 Web App**: https://web-quhbib299-bigjos-projects.vercel.app  
 - **🔧 API**: https://api-avwjnzlcf-bigjos-projects.vercel.app
 
 **Current Status**: 
 - ✅ **Backend**: Express.js API deployed with proper environment configuration
-- ✅ **Frontend**: React app deployed with correct API connection (`VITE_API_URL` set)
-- ✅ **Environment**: Production database and secrets properly configured
+- ✅ **Frontend**: React app deployed with centralized env config (no more hardcoded localhost URLs)
+- ✅ **Environment**: Production database and secrets properly configured  
+- ✅ **API Connection**: Frontend now correctly connects to production API via `VITE_API_URL`
 - ⚠️ **Access**: Currently requires Vercel team member authentication
 
 **For Your Own Deployment**:
