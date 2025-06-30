@@ -47,17 +47,17 @@ jobs:
           echo "$WEB_DOMAIN" | vercel env add FRONTEND_URL production --force --token $VERCEL_TOKEN
           
           # GitHub Integration (optional)
-          if [ -n "${{ secrets.GITHUB_CLIENT_ID }}" ]; then
-            echo "${{ secrets.GITHUB_CLIENT_ID }}" | vercel env add GITHUB_CLIENT_ID production --force --token $VERCEL_TOKEN
-            echo "${{ secrets.GITHUB_CLIENT_SECRET }}" | vercel env add GITHUB_CLIENT_SECRET production --force --token $VERCEL_TOKEN
+          if [ -n "${{ secrets.GH_CLIENT_ID }}" ]; then
+            echo "${{ secrets.GH_CLIENT_ID }}" | vercel env add GITHUB_CLIENT_ID production --force --token $VERCEL_TOKEN
+            echo "${{ secrets.GH_CLIENT_SECRET }}" | vercel env add GITHUB_CLIENT_SECRET production --force --token $VERCEL_TOKEN
           fi
           
           # GitHub App (optional)
-          if [ -n "${{ secrets.GITHUB_APP_ID }}" ]; then
-            echo "${{ secrets.GITHUB_APP_ID }}" | vercel env add GITHUB_APP_ID production --force --token $VERCEL_TOKEN
-            echo "${{ secrets.GITHUB_APP_NAME }}" | vercel env add GITHUB_APP_NAME production --force --token $VERCEL_TOKEN
-            echo "${{ secrets.GITHUB_WEBHOOK_SECRET }}" | vercel env add GITHUB_WEBHOOK_SECRET production --force --token $VERCEL_TOKEN
-            echo "${{ secrets.GITHUB_APP_PRIVATE_KEY }}" | vercel env add GITHUB_APP_PRIVATE_KEY production --force --token $VERCEL_TOKEN
+          if [ -n "${{ secrets.GH_APP_ID }}" ]; then
+            echo "${{ secrets.GH_APP_ID }}" | vercel env add GITHUB_APP_ID production --force --token $VERCEL_TOKEN
+            echo "${{ secrets.GH_APP_NAME }}" | vercel env add GITHUB_APP_NAME production --force --token $VERCEL_TOKEN
+            echo "${{ secrets.GH_WEBHOOK_SECRET }}" | vercel env add GITHUB_WEBHOOK_SECRET production --force --token $VERCEL_TOKEN
+            echo "${{ secrets.GH_APP_PRIVATE_KEY }}" | vercel env add GITHUB_APP_PRIVATE_KEY production --force --token $VERCEL_TOKEN
           fi
           
           # Deploy to fixed domain
