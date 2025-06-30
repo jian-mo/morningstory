@@ -4,7 +4,6 @@
   "installCommand": "npm install --ignore-scripts",
   "framework": "vite",
   "public": true,
-  "name": "morning-story-web",
   "rewrites": [
     {
       "source": "/(.*)",
