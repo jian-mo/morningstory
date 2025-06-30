@@ -47,7 +47,7 @@ export function Integrations() {
   })
 
   const connectedTypes = new Set(integrations.map(i => i.type))
-  const availableIntegrations = AVAILABLE_INTEGRATIONS.filter(i => !connectedTypes.has(i.type))
+  const availableIntegrations = AVAILABLE_INTEGRATIONS.filter(i => !connectedTypes.has(i.type as any))
 
   if (isLoading) {
     return (
