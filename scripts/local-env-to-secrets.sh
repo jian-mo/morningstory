@@ -93,6 +93,7 @@ set_secret_from_env "ENCRYPTION_KEY"
 # Optional secrets
 echo ""
 echo -e "${BLUE}🔗 Setting optional secrets...${NC}"
+set_secret_from_env "FRONTEND_URL"
 set_secret_from_env "API_URL"
 set_secret_from_env "GITHUB_CLIENT_ID"
 set_secret_from_env "GITHUB_CLIENT_SECRET"

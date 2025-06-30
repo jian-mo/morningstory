@@ -39,6 +39,11 @@ jobs:
           echo "${{ secrets.ENCRYPTION_KEY }}" | vercel env add ENCRYPTION_KEY production --force --token $VERCEL_TOKEN
           echo "production" | vercel env add NODE_ENV production --force --token $VERCEL_TOKEN
           
+          # Frontend URL for CORS and OAuth callbacks
+          if [ -n "${{ secrets.FRONTEND_URL }}" ]; then
+            echo "${{ secrets.FRONTEND_URL }}" | vercel env add FRONTEND_URL production --force --token $VERCEL_TOKEN
+          fi
+          
           # GitHub Integration (optional)
           if [ -n "${{ secrets.GITHUB_CLIENT_ID }}" ]; then
             echo "${{ secrets.GITHUB_CLIENT_ID }}" | vercel env add GITHUB_CLIENT_ID production --force --token $VERCEL_TOKEN
