@@ -4,6 +4,10 @@ const cors = require('cors');
 
 const app = express();
 
+// Simple in-memory storage for demo purposes
+// In production, this would be stored in a database
+const userIntegrations = {};
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || true,
@@ -66,7 +70,12 @@ app.get('/auth/me', (req, res) => {
 
 // Integrations endpoints
 app.get('/integrations', (req, res) => {
-  res.json([]);
+  // Get user ID from auth header (in real app, this would be from JWT)
+  const userId = 'test-user-123';
+  
+  // Return user's integrations
+  const integrations = userIntegrations[userId] || [];
+  res.json(integrations);
 });
 
 app.get('/integrations/github/app/install', (req, res) => {
@@ -110,15 +119,31 @@ app.get('/integrations/github/app/install', (req, res) => {
 });
 
 app.post('/integrations/github/connect', (req, res) => {
+  const userId = 'test-user-123';
+  
+  // Create integration
+  const integration = {
+    id: 'github-pat-' + Date.now(),
+    type: 'GITHUB',
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    metadata: {
+      installationType: 'token'
+    }
+  };
+  
+  // Store it
+  if (!userIntegrations[userId]) {
+    userIntegrations[userId] = [];
+  }
+  userIntegrations[userId] = userIntegrations[userId].filter(i => i.type !== 'GITHUB');
+  userIntegrations[userId].push(integration);
+  
   res.json({
     success: true,
     message: 'GitHub connected successfully',
-    integration: {
-      id: 'github-integration-123',
-      type: 'GITHUB',
-      isActive: true,
-      createdAt: new Date().toISOString()
-    }
+    integration
   });
 });
 
@@ -136,6 +161,35 @@ app.get('/integrations/github/app/callback', (req, res) => {
   
   if (installation_id && setup_action === 'install') {
     // Successfully installed
+    const userId = 'test-user-123'; // In real app, decode from state
+    
+    // Create GitHub App integration
+    const integration = {
+      id: 'github-app-' + installation_id,
+      type: 'GITHUB',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      metadata: {
+        installationType: 'app',
+        installationId: installation_id
+      }
+    };
+    
+    // Store it
+    if (!userIntegrations[userId]) {
+      userIntegrations[userId] = [];
+    }
+    // Remove any existing GitHub integrations
+    userIntegrations[userId] = userIntegrations[userId].filter(i => i.type !== 'GITHUB');
+    userIntegrations[userId].push(integration);
+    
+    console.log('GitHub App installed successfully:', {
+      installation_id,
+      userId,
+      integration
+    });
+    
     res.redirect(`${frontendUrl}/integrations?success=github_app_installed`);
   } else {
     // Something went wrong
