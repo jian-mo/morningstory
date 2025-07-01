@@ -1,12 +1,11 @@
 // Express server with Supabase database integration
 const express = require('express');
 const cors = require('cors');
-const { PrismaClient } = require('@prisma/client');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const prisma = require('./lib/prisma');
 
 const app = express();
-const prisma = new PrismaClient();
 
 // Middleware
 app.use(cors({
