@@ -60,9 +60,9 @@ jobs:
           
           # Deploy to fixed domain with inline environment variables
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            VERCEL_ORG_ID="${{ secrets.VERCEL_ORG_ID }}" VERCEL_PROJECT_ID="${{ secrets.VERCEL_PROJECT_ID_API }}" vercel --prod --token $VERCEL_TOKEN --yes
+            vercel --prod --token $VERCEL_TOKEN --scope ${{ secrets.VERCEL_ORG_ID }} --yes --force
           else
-            VERCEL_ORG_ID="${{ secrets.VERCEL_ORG_ID }}" VERCEL_PROJECT_ID="${{ secrets.VERCEL_PROJECT_ID_API }}" vercel --token $VERCEL_TOKEN --yes
+            vercel --token $VERCEL_TOKEN --scope ${{ secrets.VERCEL_ORG_ID }} --yes --force
           fi
           
           echo "🚀 API deployed to: $API_DOMAIN"
@@ -79,9 +79,9 @@ jobs:
           
           # Deploy to fixed domain with inline environment variables
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            VERCEL_ORG_ID="${{ secrets.VERCEL_ORG_ID }}" VERCEL_PROJECT_ID="${{ secrets.VERCEL_PROJECT_ID_WEB }}" vercel --prod --token $VERCEL_TOKEN --yes
+            vercel --prod --token $VERCEL_TOKEN --scope ${{ secrets.VERCEL_ORG_ID }} --yes --force
           else
-            VERCEL_ORG_ID="${{ secrets.VERCEL_ORG_ID }}" VERCEL_PROJECT_ID="${{ secrets.VERCEL_PROJECT_ID_WEB }}" vercel --token $VERCEL_TOKEN --yes
+            vercel --token $VERCEL_TOKEN --scope ${{ secrets.VERCEL_ORG_ID }} --yes --force
           fi
           
           echo "🌐 Web app deployed to: $WEB_DOMAIN"
