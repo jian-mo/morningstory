@@ -39,8 +39,8 @@ jobs:
           
           # Create .vercel directory and project.json dynamically (never committed)
           mkdir -p .vercel
-          PROJECT_ID=$(echo "$VERCEL_PROJECT_ID" | tr -d '\n\r')
-          ORG_ID=$(echo "$VERCEL_ORG_ID" | tr -d '\n\r')
+          PROJECT_ID=$(echo "$VERCEL_PROJECT_ID" | tr -d '\n\r' | xargs)
+          ORG_ID=$(echo "$VERCEL_ORG_ID" | tr -d '\n\r' | xargs)
           cat > .vercel/project.json << EOF
           {
             "projectId": "$PROJECT_ID",
@@ -111,8 +111,8 @@ jobs:
           
           # Create .vercel directory and project.json dynamically (never committed)
           mkdir -p .vercel
-          PROJECT_ID=$(echo "$VERCEL_PROJECT_ID" | tr -d '\n\r')
-          ORG_ID=$(echo "$VERCEL_ORG_ID" | tr -d '\n\r')
+          PROJECT_ID=$(echo "$VERCEL_PROJECT_ID" | tr -d '\n\r' | xargs)
+          ORG_ID=$(echo "$VERCEL_ORG_ID" | tr -d '\n\r' | xargs)
           cat > .vercel/project.json << EOF
           {
             "projectId": "$PROJECT_ID",
