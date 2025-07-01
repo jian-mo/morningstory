@@ -35,6 +35,16 @@ jobs:
         run: |
           cd apps/api
           
+          # Create .vercel directory and project.json dynamically (never committed)
+          mkdir -p .vercel
+          cat > .vercel/project.json << EOF
+          {
+            "projectId": "${{ secrets.VERCEL_PROJECT_ID_API }}",
+            "orgId": "${{ secrets.VERCEL_ORG_ID }}"
+          }
+          EOF
+          echo "✅ Created project linking file for API"
+          
           # Set environment variables from GitHub Secrets
           echo "${{ secrets.DATABASE_URL }}" | vercel env add DATABASE_URL production --force --token $VERCEL_TOKEN
           echo "${{ secrets.JWT_SECRET }}" | vercel env add JWT_SECRET production --force --token $VERCEL_TOKEN
@@ -58,11 +68,11 @@ jobs:
             echo "${{ secrets.GH_APP_PRIVATE_KEY }}" | vercel env add GITHUB_APP_PRIVATE_KEY production --force --token $VERCEL_TOKEN
           fi
           
-          # Deploy to fixed domain with inline environment variables
+          # Deploy with proper project linking
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            vercel --prod --token $VERCEL_TOKEN --scope ${{ secrets.VERCEL_ORG_ID }} --yes --force
+            vercel --prod --token $VERCEL_TOKEN --yes
           else
-            vercel --token $VERCEL_TOKEN --scope ${{ secrets.VERCEL_ORG_ID }} --yes --force
+            vercel --token $VERCEL_TOKEN --yes
           fi
           
           echo "🚀 API deployed to: $API_DOMAIN"
@@ -73,15 +83,25 @@ jobs:
         run: |
           cd apps/web
           
+          # Create .vercel directory and project.json dynamically (never committed)
+          mkdir -p .vercel
+          cat > .vercel/project.json << EOF
+          {
+            "projectId": "${{ secrets.VERCEL_PROJECT_ID_WEB }}",
+            "orgId": "${{ secrets.VERCEL_ORG_ID }}"
+          }
+          EOF
+          echo "✅ Created project linking file for Web"
+          
           # Use fixed API domain
           echo "Setting VITE_API_URL to: $API_DOMAIN"
           echo "$API_DOMAIN" | vercel env add VITE_API_URL production --force --token $VERCEL_TOKEN
           
-          # Deploy to fixed domain with inline environment variables
+          # Deploy with proper project linking
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            vercel --prod --token $VERCEL_TOKEN --scope ${{ secrets.VERCEL_ORG_ID }} --yes --force
+            vercel --prod --token $VERCEL_TOKEN --yes
           else
-            vercel --token $VERCEL_TOKEN --scope ${{ secrets.VERCEL_ORG_ID }} --yes --force
+            vercel --token $VERCEL_TOKEN --yes
           fi
           
           echo "🌐 Web app deployed to: $WEB_DOMAIN"

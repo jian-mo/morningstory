@@ -53,3 +53,5 @@ Thumbs.db
 # Project specific
 .docs/*
 .posts/*
+# Vercel project linking (contains sensitive project IDs)
+.vercel/
