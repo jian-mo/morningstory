@@ -6,8 +6,18 @@ export class OpenAIClient {
   private client: OpenAI;
   private model: string;
 
-  constructor(apiKey: string, model: string = 'gpt-4') {
-    this.client = new OpenAI({ apiKey });
+  constructor(apiKey: string, model: string = 'openai/gpt-4o-mini', baseURL?: string) {
+    // Default to OpenRouter if no baseURL provided
+    const defaultBaseURL = 'https://openrouter.ai/api/v1';
+    
+    this.client = new OpenAI({ 
+      apiKey,
+      baseURL: baseURL || defaultBaseURL,
+      defaultHeaders: baseURL ? {} : {
+        'HTTP-Referer': 'https://morning-story.com',
+        'X-Title': 'Morning Story Standup Bot'
+      }
+    });
     this.model = model;
   }
 
@@ -103,9 +113,10 @@ export class OpenAIClient {
   }
 
   private calculateCost(tokens: number): number {
-    // GPT-4 pricing: $0.03 per 1K prompt tokens, $0.06 per 1K completion tokens
+    // OpenRouter pricing varies by model - using approximate cost for gpt-4o-mini
+    // $0.00015 per 1K input tokens, $0.0006 per 1K output tokens
     // Simplified calculation assuming 50/50 split
-    const costPer1000Tokens = 0.045; // Average of input/output costs
+    const costPer1000Tokens = 0.000375; // Average of input/output costs for gpt-4o-mini
     return (tokens / 1000) * costPer1000Tokens;
   }
 

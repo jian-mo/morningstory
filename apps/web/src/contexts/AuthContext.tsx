@@ -4,6 +4,7 @@ import { authApi, User } from '../lib/api'
 
 interface AuthContextType {
   user: User | null
+  token: string | null
   isLoading: boolean
   isAuthenticated: boolean
   login: (token: string) => void
@@ -65,6 +66,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value: AuthContextType = {
     user: user || null,
+    token,
     isLoading: !!token && isLoading,
     isAuthenticated: !!user,
     login,

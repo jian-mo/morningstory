@@ -4,12 +4,32 @@ const cors = require('cors');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const prisma = require('./lib/prisma');
+const { OpenAIClient } = require('../../libs/llm/dist/openai.client');
+const { GitHubClient } = require('../../libs/integrations/dist/github/github.client');
 
 const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || true,
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    
+    // List of allowed origins
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'http://localhost:3001',
+      'http://localhost:3002',
+      'http://localhost:5173', // Vite default port
+      'https://morning-story-web.vercel.app'
+    ].filter(Boolean);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -42,6 +62,20 @@ const encrypt = (text) => {
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return iv.toString('hex') + ':' + encrypted;
+};
+
+// Helper function to decrypt sensitive data
+const decrypt = (text) => {
+  if (!text) return null;
+  const algorithm = 'aes-256-cbc';
+  const key = Buffer.from(process.env.ENCRYPTION_KEY || '1234567890abcdef1234567890abcdef', 'hex');
+  const parts = text.split(':');
+  const iv = Buffer.from(parts[0], 'hex');
+  const encryptedText = parts[1];
+  const decipher = crypto.createDecipheriv(algorithm, key, iv);
+  let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
 };
 
 // Health check
@@ -114,7 +148,7 @@ app.get('/auth/me', async (req, res) => {
   
   try {
     const user = await prisma.user.findUnique({
-      where: { id: userData.userId }
+      where: { id: userData.userId || userData.id }
     });
     
     if (!user) {
@@ -329,7 +363,7 @@ app.get('/standups', async (req, res) => {
     const { take = '10', skip = '0' } = req.query;
     
     const standups = await prisma.standup.findMany({
-      where: { userId: user.id },
+      where: { userId: user.userId || user.id },
       orderBy: { generatedAt: 'desc' },
       take: parseInt(take),
       skip: parseInt(skip),
@@ -358,7 +392,7 @@ app.get('/standups/today', async (req, res) => {
 
     const standup = await prisma.standup.findFirst({
       where: {
-        userId: user.id,
+        userId: user.userId || user.id,
         date: {
           gte: startOfDay,
           lte: endOfDay,
@@ -384,7 +418,7 @@ app.get('/standups/:id', async (req, res) => {
     const standup = await prisma.standup.findFirst({
       where: { 
         id: req.params.id,
-        userId: user.id 
+        userId: user.userId || user.id 
       },
     });
 
@@ -408,25 +442,78 @@ app.post('/standups/generate', async (req, res) => {
 
     const { tone = 'professional', length = 'medium', customPrompt, date } = req.body;
     const targetDate = date ? new Date(date) : new Date();
-
-    // For now, generate a basic standup without GitHub activity
-    // TODO: Implement GitHub activity fetching and OpenAI integration
-    const content = generateBasicStandup(user.name || user.email, targetDate);
+    
+    let content;
+    let githubActivity = null;
+    let generationMetadata = {};
+    
+    // Check if user has OpenRouter configured
+    const openrouterKey = process.env.OPENROUTER_API_KEY;
+    if (openrouterKey && openrouterKey !== 'your-openrouter-api-key') {
+      try {
+        // Fetch GitHub activity if integration exists
+        const githubIntegration = await prisma.integration.findFirst({
+          where: {
+            userId: user.userId || user.id,
+            type: 'GITHUB',
+            isActive: true
+          }
+        });
+        
+        if (githubIntegration) {
+          // Decrypt access token
+          const accessToken = decrypt(githubIntegration.accessToken);
+          
+          // Fetch GitHub activity
+          const githubClient = new GitHubClient({ accessToken });
+          const yesterday = new Date(targetDate);
+          yesterday.setDate(yesterday.getDate() - 1);
+          
+          try {
+            githubActivity = await githubClient.fetchActivity(yesterday, targetDate);
+          } catch (error) {
+            console.log('Failed to fetch GitHub activity:', error);
+            // Continue without GitHub data
+          }
+        }
+        
+        // Generate with OpenRouter
+        const openaiClient = new OpenAIClient(openrouterKey);
+        const result = await openaiClient.generateStandup({
+          githubActivity,
+          preferences: { tone, length, customPrompt },
+          date: targetDate
+        });
+        
+        content = result.content;
+        generationMetadata = result.metadata;
+        
+      } catch (error) {
+        console.error('AI generation failed, falling back to basic:', error);
+        // Fallback to basic generation
+        content = generateBasicStandup(user.name || user.email, targetDate);
+        generationMetadata = { source: 'basic_fallback', error: error.message };
+      }
+    } else {
+      // No OpenRouter key configured, use basic generation
+      content = generateBasicStandup(user.name || user.email, targetDate);
+      generationMetadata = { source: 'basic' };
+    }
     
     const standup = await prisma.standup.create({
       data: {
-        userId: user.id,
+        userId: user.userId || user.id,
         content,
         rawData: { 
-          githubActivity: null,
-          generatedWithoutIntegrations: true 
+          githubActivity,
+          generatedWithoutIntegrations: !githubActivity 
         },
         metadata: { 
           tone,
           length,
           customPrompt,
-          generated_at: new Date(),
-          source: 'basic'
+          ...generationMetadata,
+          generated_at: new Date()
         },
         date: targetDate,
       },
@@ -449,7 +536,7 @@ app.delete('/standups/:id', async (req, res) => {
     await prisma.standup.delete({
       where: { 
         id: req.params.id,
-        userId: user.id 
+        userId: user.userId || user.id 
       },
     });
 
@@ -460,25 +547,52 @@ app.delete('/standups/:id', async (req, res) => {
   }
 });
 
-// Helper function to generate basic standup
+// Helper function to generate basic standup with variety
 function generateBasicStandup(userName, date) {
   const yesterday = new Date(date);
   yesterday.setDate(yesterday.getDate() - 1);
   
+  // Random task variations to make standups less repetitive
+  const yesterdayTasks = [
+    ['Worked on feature implementation', 'Fixed several bugs in the codebase', 'Reviewed pull requests from team members'],
+    ['Completed API endpoint development', 'Updated documentation', 'Participated in team sync meeting'],
+    ['Refactored legacy code for better performance', 'Added unit tests for new features', 'Collaborated on system design'],
+    ['Debugged production issues', 'Implemented error handling improvements', 'Reviewed and merged code changes'],
+    ['Worked on database optimization', 'Created migration scripts', 'Attended sprint planning session']
+  ];
+  
+  const todayTasks = [
+    ['Continue feature development', 'Code review and testing', 'Update project documentation'],
+    ['Implement remaining API endpoints', 'Write integration tests', 'Deploy to staging environment'],
+    ['Complete refactoring tasks', 'Performance testing and optimization', 'Team knowledge sharing session'],
+    ['Monitor system metrics', 'Address code review feedback', 'Prepare for sprint demo'],
+    ['Finalize database changes', 'Run performance benchmarks', 'Sync with product team']
+  ];
+  
+  const blockers = [
+    'None at this time',
+    'Waiting for design specifications',
+    'Need access to production logs',
+    'Pending code review approval',
+    'None currently'
+  ];
+  
+  // Pick random tasks
+  const randomIndex = Math.floor(Math.random() * yesterdayTasks.length);
+  const yesterdayList = yesterdayTasks[randomIndex].map(task => `- ${task}`).join('\n');
+  const todayList = todayTasks[randomIndex].map(task => `- ${task}`).join('\n');
+  const blocker = blockers[Math.floor(Math.random() * blockers.length)];
+  
   return `## Daily Standup - ${date.toDateString()}
 
 **Yesterday (${yesterday.toDateString()}):**
-- Worked on development tasks
-- Reviewed code and made improvements
-- Collaborated with team members
+${yesterdayList}
 
 **Today:**
-- Continue current project work
-- Address any priority items
-- Participate in team meetings
+${todayList}
 
 **Blockers:**
-- None at this time
+- ${blocker}
 
 Generated for ${userName} at ${new Date().toLocaleString()}`;
 }
@@ -503,6 +617,16 @@ process.on('SIGTERM', async () => {
   await prisma.$disconnect();
   process.exit(0);
 });
+
+// Start server for local development (not in test environment)
+const PORT = process.env.PORT || 3000;
+if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Morning Story API running on port ${PORT}`);
+    console.log(`📋 Health check: http://localhost:${PORT}/health`);
+    console.log(`📖 API docs: http://localhost:${PORT}/api`);
+  });
+}
 
 // Export for Vercel
 module.exports = app;

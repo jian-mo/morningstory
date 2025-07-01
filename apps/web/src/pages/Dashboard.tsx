@@ -17,7 +17,7 @@ interface Standup {
 }
 
 export function Dashboard() {
-  const { token } = useAuth()
+  const { token, isAuthenticated, isLoading: authLoading } = useAuth()
   const [standups, setStandups] = useState<Standup[]>([])
   const [todayStandup, setTodayStandup] = useState<Standup | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -25,11 +25,13 @@ export function Dashboard() {
   const [selectedStandup, setSelectedStandup] = useState<Standup | null>(null)
 
   useEffect(() => {
-    if (token) {
+    if (token && isAuthenticated) {
       fetchStandups()
       fetchTodayStandup()
+    } else if (!authLoading && !token) {
+      setIsLoading(false)
     }
-  }, [token])
+  }, [token, isAuthenticated, authLoading])
 
   const fetchStandups = async () => {
     try {
@@ -120,12 +122,24 @@ export function Dashboard() {
     navigator.clipboard.writeText(content)
   }
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading your standups...</p>
+          <p className="mt-4 text-gray-600">
+            {authLoading ? 'Checking authentication...' : 'Loading your standups...'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Please log in to access your dashboard.</p>
         </div>
       </div>
     )

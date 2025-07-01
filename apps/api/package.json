@@ -4,24 +4,28 @@
   "description": "Morning Story API - Serverless",
   "main": "index-db.js",
   "scripts": {
-    "start": "node index-db.js",
-    "dev": "node index-db.js",
+    "start": "node -r dotenv/config index-db.js dotenv_config_path=../../.env.dev",
+    "dev": "node -r dotenv/config index-db.js dotenv_config_path=../../.env.dev",
+    "prod": "node index-db.js",
     "build": "prisma generate --schema=./prisma/schema.prisma",
     "vercel-build": "prisma generate --schema=./prisma/schema.prisma",
     "postinstall": "prisma generate --schema=./prisma/schema.prisma",
-    "test": "jest --config jest.config.simple.js",
-    "test:watch": "jest --config jest.config.simple.js --watch",
-    "test:coverage": "jest --config jest.config.simple.js --coverage"
+    "test": "NODE_ENV=test jest --config jest.config.simple.js",
+    "test:watch": "NODE_ENV=test jest --config jest.config.simple.js --watch",
+    "test:coverage": "NODE_ENV=test jest --config jest.config.simple.js --coverage"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.21.2",
+    "@octokit/rest": "^21.1.1",
     "@prisma/client": "^5.22.0",
-    "jsonwebtoken": "^9.0.2"
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.0",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "openai": "^5.8.2"
   },
   "devDependencies": {
-    "prisma": "^5.22.0",
     "jest": "^29.7.0",
+    "prisma": "^5.22.0",
     "supertest": "^6.3.3"
   },
   "engines": {

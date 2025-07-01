@@ -25,18 +25,12 @@ if ! docker compose version > /dev/null 2>&1; then
     exit 1
 fi
 
-# Check if .env file exists, create if not
-if [ ! -f apps/api/.env ]; then
-    echo -e "${YELLOW}⚠️  .env file not found at 'apps/api/.env'. Creating from example...${NC}"
-    cp apps/api/.env.example apps/api/.env
-    echo -e "${GREEN}✅ Created 'apps/api/.env'.${NC}"
-fi
-
-# Check if .env is configured
-if grep -q "your-password" apps/api/.env; then
-    echo -e "${RED}❌ Your 'apps/api/.env' file is not configured.${NC}"
-    echo -e "${YELLOW}👉 Please replace 'your-password' in the DATABASE_URL with your actual Supabase password and run the script again.${NC}"
-    exit 1
+# Check if .env.dev file exists, create if not
+if [ ! -f .env.dev ]; then
+    echo -e "${YELLOW}⚠️  .env.dev file not found. Creating from example...${NC}"
+    cp .env.dev.example .env.dev
+    echo -e "${GREEN}✅ Created '.env.dev' for local development.${NC}"
+    echo -e "${YELLOW}👉 You can add your OpenRouter API key to '.env.dev' for AI standup generation.${NC}"
 fi
 
 # --- Setup Process ---
@@ -87,11 +81,11 @@ echo "  • PgAdmin: http://localhost:5050 (admin@example.com / admin123)"
 echo "  • Redis Commander: http://localhost:8081"
 echo ""
 echo -e "${YELLOW}⚠️  Next Steps:${NC}"
-echo "  • Ensure your GitHub OAuth and OpenAI API keys are set in 'apps/api/.env'"
+echo "  • Add your GitHub OAuth and OpenRouter API keys to '.env.dev' for full functionality"
 echo ""
 echo -e "${YELLOW}🚀 To start the API and Web app:${NC}"
 echo "  # Start API server:"
-echo "  cd apps/api && npm run dev:full"
+echo "  cd apps/api && npm run dev"
 echo "  # In another terminal, start web app:"
 echo "  cd apps/web && npm run dev"
 echo ""
