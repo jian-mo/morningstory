@@ -1,11 +1,12 @@
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { integrationsApi } from '../lib/api'
 import { IntegrationCard } from '../components/integrations/IntegrationCard'
 import { AddIntegrationCard } from '../components/integrations/AddIntegrationCard'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
-import { Settings, Zap } from 'lucide-react'
+import { Settings, Zap, ArrowLeft } from 'lucide-react'
 
 const AVAILABLE_INTEGRATIONS = [
   {
@@ -72,12 +73,21 @@ export function Integrations() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <Settings className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Integrations</h1>
-              <p className="text-gray-600">Connect your favorite tools to generate better standups</p>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <Settings className="h-8 w-8 text-primary" />
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Integrations</h1>
+                <p className="text-gray-600">Connect your favorite tools to generate better standups</p>
+              </div>
             </div>
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Link>
           </div>
           
           <div className="flex items-center space-x-4">

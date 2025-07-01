@@ -22,4 +22,11 @@ export const API_ENDPOINTS = {
       appInstall: `${ENV.API_BASE_URL}/integrations/github/app/install`,
     },
   },
+  standups: {
+    list: `${ENV.API_BASE_URL}/standups`,
+    today: `${ENV.API_BASE_URL}/standups/today`,
+    generate: `${ENV.API_BASE_URL}/standups/generate`,
+    get: (id: string) => `${ENV.API_BASE_URL}/standups/${id}`,
+    delete: (id: string) => `${ENV.API_BASE_URL}/standups/${id}`,
+  },
 } as const

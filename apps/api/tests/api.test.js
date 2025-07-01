@@ -156,6 +156,164 @@ describe('Morning Story API Tests', () => {
     });
   });
 
+  describe('Standups', () => {
+    let standupId;
+
+    it('should return empty standups list initially', async () => {
+      const res = await request(app)
+        .get('/standups')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body).toBeInstanceOf(Array);
+      expect(res.body).toHaveLength(0);
+    });
+
+    it('should return null for today\'s standup initially', async () => {
+      const res = await request(app)
+        .get('/standups/today')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body).toBeNull();
+    });
+
+    it('should generate a new standup', async () => {
+      const res = await request(app)
+        .post('/standups/generate')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          tone: 'professional',
+          length: 'medium',
+          customPrompt: 'Focus on testing activities'
+        })
+        .expect(200);
+
+      expect(res.body).toHaveProperty('id');
+      expect(res.body).toHaveProperty('content');
+      expect(res.body).toHaveProperty('userId', testUserId);
+      expect(res.body).toHaveProperty('rawData');
+      expect(res.body).toHaveProperty('metadata');
+      expect(res.body.metadata).toHaveProperty('tone', 'professional');
+      expect(res.body.metadata).toHaveProperty('length', 'medium');
+      expect(res.body.content).toContain('Daily Standup');
+
+      standupId = res.body.id;
+    });
+
+    it('should return the generated standup in list', async () => {
+      const res = await request(app)
+        .get('/standups')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body).toBeInstanceOf(Array);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0]).toHaveProperty('id', standupId);
+      expect(res.body[0]).toHaveProperty('content');
+    });
+
+    it('should return today\'s standup', async () => {
+      const res = await request(app)
+        .get('/standups/today')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('id', standupId);
+      expect(res.body).toHaveProperty('content');
+    });
+
+    it('should get specific standup by id', async () => {
+      const res = await request(app)
+        .get(`/standups/${standupId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveProperty('id', standupId);
+      expect(res.body).toHaveProperty('content');
+      expect(res.body).toHaveProperty('userId', testUserId);
+    });
+
+    it('should generate standup with custom date', async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const res = await request(app)
+        .post('/standups/generate')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          tone: 'casual',
+          length: 'short',
+          date: yesterday.toISOString()
+        })
+        .expect(200);
+
+      expect(res.body).toHaveProperty('id');
+      expect(res.body.metadata).toHaveProperty('tone', 'casual');
+      expect(res.body.metadata).toHaveProperty('length', 'short');
+      
+      const standupDate = new Date(res.body.date);
+      expect(standupDate.toDateString()).toBe(yesterday.toDateString());
+    });
+
+    it('should reject unauthorized requests to standups', async () => {
+      await request(app)
+        .get('/standups')
+        .expect(401);
+
+      await request(app)
+        .post('/standups/generate')
+        .send({ tone: 'professional' })
+        .expect(401);
+    });
+
+    it('should return 404 for non-existent standup', async () => {
+      await request(app)
+        .get('/standups/non-existent-id')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
+    });
+
+    it('should delete standup', async () => {
+      await request(app)
+        .delete(`/standups/${standupId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      // Verify it's deleted
+      await request(app)
+        .get(`/standups/${standupId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
+    });
+
+    it('should handle pagination', async () => {
+      // Generate multiple standups
+      for (let i = 0; i < 5; i++) {
+        await request(app)
+          .post('/standups/generate')
+          .set('Authorization', `Bearer ${authToken}`)
+          .send({ tone: 'professional' })
+          .expect(200);
+      }
+
+      // Test pagination
+      const res = await request(app)
+        .get('/standups?take=3&skip=0')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res.body).toHaveLength(3);
+
+      const res2 = await request(app)
+        .get('/standups?take=3&skip=3')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(res2.body.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
   describe('Webhooks', () => {
     it('should accept GitHub webhooks', async () => {
       const res = await request(app)

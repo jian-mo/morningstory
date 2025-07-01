@@ -316,6 +316,171 @@ app.get('/integrations/github/app/callback', async (req, res) => {
   }
 });
 
+// Standup endpoints
+app.get('/standups', async (req, res) => {
+  try {
+    const user = verifyToken(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { take = '10', skip = '0' } = req.query;
+    
+    const standups = await prisma.standup.findMany({
+      where: { userId: user.id },
+      orderBy: { generatedAt: 'desc' },
+      take: parseInt(take),
+      skip: parseInt(skip),
+    });
+
+    res.json(standups);
+  } catch (error) {
+    console.error('Get standups error:', error);
+    res.status(500).json({ error: 'Failed to fetch standups' });
+  }
+});
+
+app.get('/standups/today', async (req, res) => {
+  try {
+    const user = verifyToken(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const today = new Date();
+    const startOfDay = new Date(today);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(today);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const standup = await prisma.standup.findFirst({
+      where: {
+        userId: user.id,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      },
+      orderBy: { generatedAt: 'desc' },
+    });
+
+    res.json(standup);
+  } catch (error) {
+    console.error('Get today standup error:', error);
+    res.status(500).json({ error: 'Failed to fetch today\'s standup' });
+  }
+});
+
+app.get('/standups/:id', async (req, res) => {
+  try {
+    const user = verifyToken(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const standup = await prisma.standup.findFirst({
+      where: { 
+        id: req.params.id,
+        userId: user.id 
+      },
+    });
+
+    if (!standup) {
+      return res.status(404).json({ error: 'Standup not found' });
+    }
+
+    res.json(standup);
+  } catch (error) {
+    console.error('Get standup error:', error);
+    res.status(500).json({ error: 'Failed to fetch standup' });
+  }
+});
+
+app.post('/standups/generate', async (req, res) => {
+  try {
+    const user = verifyToken(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { tone = 'professional', length = 'medium', customPrompt, date } = req.body;
+    const targetDate = date ? new Date(date) : new Date();
+
+    // For now, generate a basic standup without GitHub activity
+    // TODO: Implement GitHub activity fetching and OpenAI integration
+    const content = generateBasicStandup(user.name || user.email, targetDate);
+    
+    const standup = await prisma.standup.create({
+      data: {
+        userId: user.id,
+        content,
+        rawData: { 
+          githubActivity: null,
+          generatedWithoutIntegrations: true 
+        },
+        metadata: { 
+          tone,
+          length,
+          customPrompt,
+          generated_at: new Date(),
+          source: 'basic'
+        },
+        date: targetDate,
+      },
+    });
+
+    res.json(standup);
+  } catch (error) {
+    console.error('Generate standup error:', error);
+    res.status(500).json({ error: 'Failed to generate standup' });
+  }
+});
+
+app.delete('/standups/:id', async (req, res) => {
+  try {
+    const user = verifyToken(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    await prisma.standup.delete({
+      where: { 
+        id: req.params.id,
+        userId: user.id 
+      },
+    });
+
+    res.json({ message: 'Standup deleted successfully' });
+  } catch (error) {
+    console.error('Delete standup error:', error);
+    res.status(500).json({ error: 'Failed to delete standup' });
+  }
+});
+
+// Helper function to generate basic standup
+function generateBasicStandup(userName, date) {
+  const yesterday = new Date(date);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  return `## Daily Standup - ${date.toDateString()}
+
+**Yesterday (${yesterday.toDateString()}):**
+- Worked on development tasks
+- Reviewed code and made improvements
+- Collaborated with team members
+
+**Today:**
+- Continue current project work
+- Address any priority items
+- Participate in team meetings
+
+**Blockers:**
+- None at this time
+
+Generated for ${userName} at ${new Date().toLocaleString()}`;
+}
+
 // Webhook endpoint
 app.post('/webhooks/github', (req, res) => {
   console.log('Received GitHub webhook:', req.headers['x-github-event']);
