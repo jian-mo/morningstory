@@ -122,6 +122,27 @@ app.post('/integrations/github/connect', (req, res) => {
   });
 });
 
+// GitHub App callback endpoint
+app.get('/integrations/github/app/callback', (req, res) => {
+  const { installation_id, setup_action, state } = req.query;
+  
+  console.log('GitHub App callback received:', {
+    installation_id,
+    setup_action,
+    state
+  });
+  
+  const frontendUrl = process.env.FRONTEND_URL || 'https://morning-story-web.vercel.app';
+  
+  if (installation_id && setup_action === 'install') {
+    // Successfully installed
+    res.redirect(`${frontendUrl}/integrations?success=github_app_installed`);
+  } else {
+    // Something went wrong
+    res.redirect(`${frontendUrl}/integrations?error=github_app_installation_failed`);
+  }
+});
+
 // Webhook endpoint
 app.post('/webhooks/github', (req, res) => {
   console.log('Received GitHub webhook:', req.headers['x-github-event']);
