@@ -32,6 +32,8 @@ jobs:
       - name: Deploy API to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
         run: |
           cd apps/api
           
@@ -39,33 +41,33 @@ jobs:
           mkdir -p .vercel
           cat > .vercel/project.json << EOF
           {
-            "projectId": "${{ secrets.VERCEL_PROJECT_ID_API }}",
-            "orgId": "${{ secrets.VERCEL_ORG_ID }}"
+            "projectId": "$VERCEL_PROJECT_ID",
+            "orgId": "$VERCEL_ORG_ID"
           }
           EOF
-          echo "✅ Created project linking file for API"
+          echo "✅ Created project linking file for API (Project: $VERCEL_PROJECT_ID)"
           
-          # Set environment variables from GitHub Secrets
-          echo "${{ secrets.DATABASE_URL }}" | vercel env add DATABASE_URL production --force --token $VERCEL_TOKEN
-          echo "${{ secrets.JWT_SECRET }}" | vercel env add JWT_SECRET production --force --token $VERCEL_TOKEN
-          echo "${{ secrets.ENCRYPTION_KEY }}" | vercel env add ENCRYPTION_KEY production --force --token $VERCEL_TOKEN
-          echo "production" | vercel env add NODE_ENV production --force --token $VERCEL_TOKEN
+          # Set environment variables from GitHub Secrets (skip if env setting fails)
+          echo "${{ secrets.DATABASE_URL }}" | vercel env add DATABASE_URL production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set DATABASE_URL"
+          echo "${{ secrets.JWT_SECRET }}" | vercel env add JWT_SECRET production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set JWT_SECRET"
+          echo "${{ secrets.ENCRYPTION_KEY }}" | vercel env add ENCRYPTION_KEY production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set ENCRYPTION_KEY"
+          echo "production" | vercel env add NODE_ENV production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set NODE_ENV"
           
           # Use fixed web domain for CORS
-          echo "$WEB_DOMAIN" | vercel env add FRONTEND_URL production --force --token $VERCEL_TOKEN
+          echo "$WEB_DOMAIN" | vercel env add FRONTEND_URL production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set FRONTEND_URL"
           
           # GitHub Integration (optional)
           if [ -n "${{ secrets.GH_CLIENT_ID }}" ]; then
-            echo "${{ secrets.GH_CLIENT_ID }}" | vercel env add GITHUB_CLIENT_ID production --force --token $VERCEL_TOKEN
-            echo "${{ secrets.GH_CLIENT_SECRET }}" | vercel env add GITHUB_CLIENT_SECRET production --force --token $VERCEL_TOKEN
+            echo "${{ secrets.GH_CLIENT_ID }}" | vercel env add GITHUB_CLIENT_ID production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set GITHUB_CLIENT_ID"
+            echo "${{ secrets.GH_CLIENT_SECRET }}" | vercel env add GITHUB_CLIENT_SECRET production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set GITHUB_CLIENT_SECRET"
           fi
           
           # GitHub App (optional)
           if [ -n "${{ secrets.GH_APP_ID }}" ]; then
-            echo "${{ secrets.GH_APP_ID }}" | vercel env add GITHUB_APP_ID production --force --token $VERCEL_TOKEN
-            echo "${{ secrets.GH_APP_NAME }}" | vercel env add GITHUB_APP_NAME production --force --token $VERCEL_TOKEN
-            echo "${{ secrets.GH_WEBHOOK_SECRET }}" | vercel env add GITHUB_WEBHOOK_SECRET production --force --token $VERCEL_TOKEN
-            echo "${{ secrets.GH_APP_PRIVATE_KEY }}" | vercel env add GITHUB_APP_PRIVATE_KEY production --force --token $VERCEL_TOKEN
+            echo "${{ secrets.GH_APP_ID }}" | vercel env add GITHUB_APP_ID production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set GITHUB_APP_ID"
+            echo "${{ secrets.GH_APP_NAME }}" | vercel env add GITHUB_APP_NAME production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set GITHUB_APP_NAME"
+            echo "${{ secrets.GH_WEBHOOK_SECRET }}" | vercel env add GITHUB_WEBHOOK_SECRET production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set GITHUB_WEBHOOK_SECRET"
+            echo "${{ secrets.GH_APP_PRIVATE_KEY }}" | vercel env add GITHUB_APP_PRIVATE_KEY production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set GITHUB_APP_PRIVATE_KEY"
           fi
           
           # Deploy with proper project linking
@@ -80,6 +82,8 @@ jobs:
       - name: Deploy Web to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
         run: |
           cd apps/web
           
@@ -87,15 +91,15 @@ jobs:
           mkdir -p .vercel
           cat > .vercel/project.json << EOF
           {
-            "projectId": "${{ secrets.VERCEL_PROJECT_ID_WEB }}",
-            "orgId": "${{ secrets.VERCEL_ORG_ID }}"
+            "projectId": "$VERCEL_PROJECT_ID",
+            "orgId": "$VERCEL_ORG_ID"
           }
           EOF
-          echo "✅ Created project linking file for Web"
+          echo "✅ Created project linking file for Web (Project: $VERCEL_PROJECT_ID)"
           
           # Use fixed API domain
           echo "Setting VITE_API_URL to: $API_DOMAIN"
-          echo "$API_DOMAIN" | vercel env add VITE_API_URL production --force --token $VERCEL_TOKEN
+          echo "$API_DOMAIN" | vercel env add VITE_API_URL production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set VITE_API_URL"
           
           # Deploy with proper project linking
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
