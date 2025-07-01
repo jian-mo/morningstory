@@ -39,13 +39,15 @@ jobs:
           
           # Create .vercel directory and project.json dynamically (never committed)
           mkdir -p .vercel
+          PROJECT_ID=$(echo "$VERCEL_PROJECT_ID" | tr -d '\n\r')
+          ORG_ID=$(echo "$VERCEL_ORG_ID" | tr -d '\n\r')
           cat > .vercel/project.json << EOF
           {
-            "projectId": "$VERCEL_PROJECT_ID",
-            "orgId": "$VERCEL_ORG_ID"
+            "projectId": "$PROJECT_ID",
+            "orgId": "$ORG_ID"
           }
           EOF
-          echo "✅ Created project linking file for API (Project: $VERCEL_PROJECT_ID)"
+          echo "✅ Created project linking file for API (Project: $PROJECT_ID)"
           
           # Set environment variables from GitHub Secrets (skip if env setting fails)
           echo "${{ secrets.DATABASE_URL }}" | vercel env add DATABASE_URL production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set DATABASE_URL"
@@ -89,13 +91,15 @@ jobs:
           
           # Create .vercel directory and project.json dynamically (never committed)
           mkdir -p .vercel
+          PROJECT_ID=$(echo "$VERCEL_PROJECT_ID" | tr -d '\n\r')
+          ORG_ID=$(echo "$VERCEL_ORG_ID" | tr -d '\n\r')
           cat > .vercel/project.json << EOF
           {
-            "projectId": "$VERCEL_PROJECT_ID",
-            "orgId": "$VERCEL_ORG_ID"
+            "projectId": "$PROJECT_ID",
+            "orgId": "$ORG_ID"
           }
           EOF
-          echo "✅ Created project linking file for Web (Project: $VERCEL_PROJECT_ID)"
+          echo "✅ Created project linking file for Web (Project: $PROJECT_ID)"
           
           # Use fixed API domain
           echo "Setting VITE_API_URL to: $API_DOMAIN"
