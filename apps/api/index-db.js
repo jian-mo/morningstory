@@ -90,6 +90,38 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Test OpenRouter endpoint (no auth required)
+app.post('/test/openrouter', async (req, res) => {
+  try {
+    const openrouterKey = process.env.OPENROUTER_API_KEY;
+    if (!openrouterKey) {
+      return res.status(500).json({ error: 'OpenRouter API key not configured' });
+    }
+
+    const { OpenAIClient } = require('../../libs/llm/dist/openai.client');
+    const client = new OpenAIClient(openrouterKey);
+    
+    const result = await client.generateStandup({
+      githubActivity: null,
+      preferences: { tone: 'professional', length: 'medium' },
+      date: new Date()
+    });
+
+    res.json({
+      success: true,
+      metadata: result.metadata,
+      content: result.content,
+      message: 'OpenRouter integration working!'
+    });
+  } catch (error) {
+    console.error('OpenRouter test error:', error);
+    res.status(500).json({ 
+      error: 'OpenRouter test failed',
+      message: error.message 
+    });
+  }
+});
+
 // API info
 app.get('/api', (req, res) => {
   res.json({

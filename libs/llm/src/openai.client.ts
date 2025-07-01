@@ -122,7 +122,12 @@ export class OpenAIClient {
 
   async validateApiKey(): Promise<boolean> {
     try {
-      await this.client.models.list();
+      // Test with a minimal chat completion request instead of models.list()
+      await this.client.chat.completions.create({
+        model: this.model,
+        messages: [{ role: 'user', content: 'test' }],
+        max_tokens: 1
+      });
       return true;
     } catch {
       return false;
