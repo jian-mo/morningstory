@@ -50,7 +50,9 @@ app.get('/health', (req, res) => {
     status: 'ok', 
     timestamp: new Date().toISOString(),
     message: 'Morning Story API is running!',
-    database: 'connected'
+    database: 'connected',
+    version: '2.0.0-standups',
+    hasStandupEndpoints: true
   });
 });
 
