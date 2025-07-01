@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node index-db.js",
     "dev": "node index-db.js",
-    "build": "prisma generate && prisma db push --accept-data-loss",
-    "vercel-build": "prisma generate && prisma db push --accept-data-loss",
+    "build": "prisma generate",
+    "vercel-build": "prisma generate",
     "postinstall": "prisma generate",
     "test": "jest --config jest.config.simple.js",
     "test:watch": "jest --config jest.config.simple.js --watch",
