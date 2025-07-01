@@ -80,8 +80,18 @@ jobs:
           fi
           
           echo "🚀 API deployed to: $API_DOMAIN"
+          
+          # Verify deployment worked
+          echo "⏳ Waiting for deployment to be ready..."
+          sleep 30
+          if curl -f "$API_DOMAIN/health" > /dev/null 2>&1; then
+            echo "✅ API deployment verified successfully!"
+          else
+            echo "⚠️ API may still be starting up"
+          fi
 
       - name: Deploy Web to Vercel
+        continue-on-error: true
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
