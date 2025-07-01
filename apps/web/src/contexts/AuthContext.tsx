@@ -1,15 +1,13 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { authApi, User } from '../lib/api'
+import { User, Session, AuthError } from '@supabase/supabase-js'
+import { supabase } from '../lib/supabase'
 
 interface AuthContextType {
   user: User | null
-  token: string | null
+  session: Session | null
   isLoading: boolean
   isAuthenticated: boolean
-  login: (token: string) => void
-  logout: () => void
-  refetch: () => void
+  signOut: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -27,51 +25,40 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [token, setToken] = useState<string | null>(
-    () => localStorage.getItem('authToken')
-  )
-
-  const {
-    data: user,
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ['auth', 'me'],
-    queryFn: () => authApi.me().then((res) => res.data),
-    enabled: !!token,
-    retry: false,
-  })
-
-  const login = (newToken: string) => {
-    localStorage.setItem('authToken', newToken)
-    setToken(newToken)
-  }
-
-  const logout = () => {
-    localStorage.removeItem('authToken')
-    setToken(null)
-  }
+  const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const handleStorageChange = () => {
-      const newToken = localStorage.getItem('authToken')
-      if (newToken !== token) {
-        setToken(newToken)
-      }
-    }
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setUser(session?.user ?? null)
+      setIsLoading(false)
+    })
 
-    window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
-  }, [token])
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setSession(session)
+      setUser(session?.user ?? null)
+      setIsLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const signOut = async () => {
+    await supabase.auth.signOut()
+  }
 
   const value: AuthContextType = {
-    user: user || null,
-    token,
-    isLoading: !!token && isLoading,
+    user,
+    session,
+    isLoading,
     isAuthenticated: !!user,
-    login,
-    logout,
-    refetch,
+    signOut,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

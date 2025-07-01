@@ -72,6 +72,16 @@ jobs:
             echo "${{ secrets.GH_APP_PRIVATE_KEY }}" | vercel env add GITHUB_APP_PRIVATE_KEY production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set GITHUB_APP_PRIVATE_KEY"
           fi
           
+          # OpenRouter API (optional)
+          if [ -n "${{ secrets.OPENROUTER_API_KEY }}" ]; then
+            echo "${{ secrets.OPENROUTER_API_KEY }}" | vercel env add OPENROUTER_API_KEY production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set OPENROUTER_API_KEY"
+          fi
+          
+          # Direct URL for Prisma migrations
+          if [ -n "${{ secrets.DIRECT_URL }}" ]; then
+            echo "${{ secrets.DIRECT_URL }}" | vercel env add DIRECT_URL production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set DIRECT_URL"
+          fi
+          
           # Deploy with proper project linking
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             vercel --prod --token $VERCEL_TOKEN --yes
@@ -114,6 +124,15 @@ jobs:
           # Use fixed API domain
           echo "Setting VITE_API_URL to: $API_DOMAIN"
           echo "$API_DOMAIN" | vercel env add VITE_API_URL production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set VITE_API_URL"
+          
+          # Supabase configuration for auth
+          if [ -n "${{ secrets.VITE_SUPABASE_URL }}" ]; then
+            echo "${{ secrets.VITE_SUPABASE_URL }}" | vercel env add VITE_SUPABASE_URL production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set VITE_SUPABASE_URL"
+          fi
+          
+          if [ -n "${{ secrets.VITE_SUPABASE_ANON_KEY }}" ]; then
+            echo "${{ secrets.VITE_SUPABASE_ANON_KEY }}" | vercel env add VITE_SUPABASE_ANON_KEY production --force --token $VERCEL_TOKEN || echo "⚠️ Failed to set VITE_SUPABASE_ANON_KEY"
+          fi
           
           # Deploy with proper project linking
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then

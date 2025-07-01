@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GithubAuthGuard } from './guards/github-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Response } from 'express';
@@ -52,6 +53,24 @@ export class AuthController {
   @UseGuards(GithubAuthGuard)
   @ApiExcludeEndpoint()
   async githubAuthCallback(@Request() req: any, @Res() res: Response) {
+    const { access_token } = await this.authService.login(req.user);
+    
+    // Redirect to frontend with token
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    res.redirect(`${frontendUrl}/auth/callback?token=${access_token}`);
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ summary: 'Login with Google OAuth' })
+  async googleAuth() {
+    // Passport will handle the redirect
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiExcludeEndpoint()
+  async googleAuthCallback(@Request() req: any, @Res() res: Response) {
     const { access_token } = await this.authService.login(req.user);
     
     // Redirect to frontend with token

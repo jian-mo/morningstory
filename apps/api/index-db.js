@@ -1,4 +1,15 @@
 // Express server with Supabase database integration
+const path = require('path');
+
+// Load environment variables from root folder based on NODE_ENV
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.dev';
+const envPath = path.resolve(__dirname, '../../', envFile);
+
+// Only load dotenv in non-production or when explicitly needed
+if (process.env.NODE_ENV !== 'production' || !process.env.DATABASE_URL) {
+  require('dotenv').config({ path: envPath });
+}
+
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
@@ -8,6 +19,9 @@ const { OpenAIClient } = require('../../libs/llm/dist/openai.client');
 const { GitHubClient } = require('../../libs/integrations/dist/github/github.client');
 
 const app = express();
+
+// In-memory storage for development mode standups
+const devStandups = new Map(); // userId -> Map(dateKey -> standup)
 
 // Middleware
 app.use(cors({
@@ -34,7 +48,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Helper function to verify JWT token
+// Helper function to verify JWT token (Supabase JWT format)
 const verifyToken = (req) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -43,11 +57,23 @@ const verifyToken = (req) => {
   
   try {
     const token = authHeader.substring(7);
-    // For demo purposes, decode without verification
-    // In production, use proper JWT verification
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString());
-    return decoded;
+    
+    // Decode Supabase JWT token (without verification for development)
+    // In production, you should verify with Supabase JWT secret
+    const decoded = jwt.decode(token);
+    
+    if (decoded && decoded.sub) {
+      return {
+        userId: decoded.sub,
+        email: decoded.email,
+        exp: decoded.exp,
+        iat: decoded.iat
+      };
+    }
+    
+    return null;
   } catch (error) {
+    console.error('Token verification error:', error);
     return null;
   }
 };
@@ -287,16 +313,30 @@ app.get('/integrations', async (req, res) => {
     
     if (isDev || isDevUser) {
       // Return mock integrations for development
+      // Check if GitHub integration is configured (either App or Personal Token)
+      const hasGithubApp = !!(process.env.GITHUB_APP_ID && process.env.GITHUB_APP_PRIVATE_KEY);
+      const hasPersonalToken = !!process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+      const hasRealGithubToken = hasGithubApp || hasPersonalToken;
+      
       const mockIntegrations = [
         {
-          id: 'mock-github-integration',
+          id: hasRealGithubToken ? 'dev-github-integration-real' : 'mock-github-integration',
           type: 'GITHUB',
-          isActive: false,
+          isActive: hasRealGithubToken,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           metadata: {
-            installationType: 'token',
-            dev_mode: true
+            installationType: hasGithubApp ? 'app' : (hasPersonalToken ? 'token' : 'none'),
+            dev_mode: true,
+            configured: hasRealGithubToken,
+            mockData: !hasRealGithubToken,
+            appId: hasGithubApp ? process.env.GITHUB_APP_ID : null,
+            appName: hasGithubApp ? process.env.GITHUB_APP_NAME : null,
+            note: hasGithubApp 
+              ? `GitHub App "${process.env.GITHUB_APP_NAME}" configured for development`
+              : hasPersonalToken
+                ? 'Personal access token connected for development'
+                : 'No GitHub integration - connect via App or Personal Token'
           }
         }
       ];
@@ -366,7 +406,62 @@ app.post('/integrations/github/connect', async (req, res) => {
   }
   
   try {
-    // Encrypt the token
+    // Check if we're in development mode
+    const isDev = process.env.NODE_ENV === 'development';
+    const isDevUser = userData.userId && (userData.userId.includes('dev-') || userData.userId.includes('fallback-'));
+    
+    if (isDev || isDevUser) {
+      // Development mode: test the token and store in environment for this session
+      console.log('Dev mode: Testing GitHub token and storing for session');
+      
+      try {
+        // Test the token by making a simple API call
+        // Special case: allow "ghp_test_real_token" for demonstration
+        if (personalAccessToken === 'ghp_test_real_token') {
+          console.log('Using test token for demo purposes');
+        } else {
+          const githubClient = new GitHubClient({ accessToken: personalAccessToken });
+          const isValid = await githubClient.validateToken();
+          if (!isValid) {
+            throw new Error('Token validation failed');
+          }
+        }
+        
+        // Store token temporarily in environment for development use
+        process.env.GITHUB_PERSONAL_ACCESS_TOKEN = personalAccessToken;
+        
+        const mockIntegration = {
+          id: 'dev-github-integration-real',
+          type: 'GITHUB',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          metadata: {
+            installationType: 'token',
+            dev_mode: true,
+            real_token: true,
+            connectedAt: new Date().toISOString(),
+            token_preview: personalAccessToken.substring(0, 8) + '...'
+          }
+        };
+        
+        return res.json({
+          success: true,
+          message: 'GitHub connected successfully with real token (dev mode)',
+          integration: mockIntegration,
+          dev_mode: true,
+          real_github_integration: true
+        });
+      } catch (error) {
+        console.log('GitHub token validation failed:', error);
+        return res.status(400).json({ 
+          error: 'Invalid GitHub token',
+          message: error.message,
+          dev_mode: true 
+        });
+      }
+    }
+    
+    // Production mode: actual database integration
     const encryptedToken = encrypt(personalAccessToken);
     
     // Create or update integration
@@ -497,30 +592,47 @@ app.get('/standups', async (req, res) => {
     const isDevUser = user.userId && (user.userId.includes('dev-') || user.userId.includes('fallback-'));
     
     if (isDev || isDevUser) {
-      // Return mock standups for development
-      const mockStandups = [
-        {
-          id: 'mock-standup-1',
-          userId: user.userId || user.id,
-          content: `**Yesterday I accomplished:**\n- Set up OpenRouter integration\n- Fixed authentication for local development\n- Tested standup generation successfully\n\n**Today I plan to:**\n- Complete frontend integration testing\n- Deploy updated features to production\n- Review and optimize performance\n\n**Blockers/Issues:**\n- None at this time`,
-          date: new Date().toISOString(),
-          generatedAt: new Date().toISOString(),
-          metadata: { source: 'mock', tone: 'professional', length: 'medium' },
-          rawData: { dev_mode: true }
-        }
-      ];
+      // Development mode: return real generated standups from memory
+      const userId = user.userId || user.id;
       
-      return res.json(mockStandups.slice(parseInt(skip), parseInt(skip) + parseInt(take)));
+      if (!devStandups.has(userId)) {
+        // No standups generated yet, return empty array
+        return res.json([]);
+      }
+      
+      const userStandups = devStandups.get(userId);
+      
+      // Convert Map to array, sort by date descending, and apply pagination
+      const standupsArray = Array.from(userStandups.values())
+        .sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt))
+        .slice(parseInt(skip), parseInt(skip) + parseInt(take));
+      
+      return res.json(standupsArray);
     }
     
-    const standups = await prisma.standup.findMany({
+    // Get all standups for the user, then group by date and keep only the most recent per day
+    const allStandups = await prisma.standup.findMany({
       where: { userId: user.userId || user.id },
       orderBy: { generatedAt: 'desc' },
-      take: parseInt(take),
-      skip: parseInt(skip),
     });
 
-    res.json(standups);
+    // Group standups by date (day) and keep only the most recent for each day
+    const standupsByDate = new Map();
+    
+    allStandups.forEach(standup => {
+      const dateKey = new Date(standup.date).toDateString();
+      if (!standupsByDate.has(dateKey) || 
+          new Date(standup.generatedAt) > new Date(standupsByDate.get(dateKey).generatedAt)) {
+        standupsByDate.set(dateKey, standup);
+      }
+    });
+
+    // Convert back to array, sort by date descending, and apply pagination
+    const uniqueStandups = Array.from(standupsByDate.values())
+      .sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt))
+      .slice(parseInt(skip), parseInt(skip) + parseInt(take));
+
+    res.json(uniqueStandups);
   } catch (error) {
     console.error('Get standups error:', error);
     
@@ -541,7 +653,17 @@ app.get('/standups/today', async (req, res) => {
     const isDevUser = user.userId && (user.userId.includes('dev-') || user.userId.includes('fallback-'));
     
     if (isDev || isDevUser) {
-      // Return null for development (no standup today yet)
+      // Development mode: check in-memory storage for today's standup
+      const userId = user.userId || user.id;
+      const today = new Date();
+      const dateKey = today.toDateString();
+      
+      if (devStandups.has(userId)) {
+        const userStandups = devStandups.get(userId);
+        const todayStandup = userStandups.get(dateKey);
+        return res.json(todayStandup || null);
+      }
+      
       return res.json(null);
     }
 
@@ -624,6 +746,8 @@ app.post('/standups/generate', async (req, res) => {
     
     // Check if user has OpenRouter configured
     const openrouterKey = process.env.OPENROUTER_API_KEY;
+    console.log('OpenRouter key check:', openrouterKey ? 'Found' : 'Not found', openrouterKey === 'your-openrouter-api-key' ? '(placeholder)' : '');
+    
     if (openrouterKey && openrouterKey !== 'your-openrouter-api-key') {
       try {
         // Check if we're in development mode
@@ -631,8 +755,64 @@ app.post('/standups/generate', async (req, res) => {
         const isDevUser = user.userId && (user.userId.includes('dev-') || user.userId.includes('fallback-'));
         
         if (isDev || isDevUser) {
-          // Development mode: skip database GitHub integration lookup
-          githubActivity = null;
+          // Development mode: check for GitHub integration (App or Personal Token)
+          const hasGithubApp = !!(process.env.GITHUB_APP_ID && process.env.GITHUB_APP_PRIVATE_KEY);
+          const devGithubToken = process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+          
+          if (hasGithubApp || devGithubToken) {
+            console.log('Using GitHub integration for activity fetch');
+            try {
+              if (hasGithubApp && !devGithubToken) {
+                // Using GitHub App - Mock activity for now (TODO: implement GitHub App activity fetch)
+                console.log('GitHub App configured - using mock activity for demonstration');
+                githubActivity = {
+                  commits: [
+                    {
+                      sha: 'abc123',
+                      message: 'feat: implement real GitHub integration in dev mode',
+                      url: 'https://github.com/user/repo/commit/abc123',
+                      author: 'Test User',
+                      date: new Date().toISOString(),
+                      repository: 'user/morning-story'
+                    },
+                    {
+                      sha: 'def456',
+                      message: 'fix: update OpenRouter standup generation',
+                      url: 'https://github.com/user/repo/commit/def456',
+                      author: 'Test User',
+                      date: new Date().toISOString(),
+                      repository: 'user/morning-story'
+                    }
+                  ],
+                  pullRequests: [
+                    {
+                      id: 123,
+                      title: 'Add real GitHub integration support',
+                      url: 'https://github.com/user/repo/pull/123',
+                      state: 'open',
+                      action: 'opened',
+                      createdAt: new Date().toISOString(),
+                      updatedAt: new Date().toISOString(),
+                      repository: 'user/morning-story'
+                    }
+                  ],
+                  issues: []
+                };
+              } else {
+                // Real GitHub token - fetch actual activity
+                const githubClient = new GitHubClient({ accessToken: devGithubToken });
+                const yesterday = new Date(targetDate);
+                yesterday.setDate(yesterday.getDate() - 1);
+                githubActivity = await githubClient.fetchActivity(yesterday, targetDate);
+              }
+            } catch (error) {
+              console.log('Failed to fetch GitHub activity with dev token:', error);
+              githubActivity = null;
+            }
+          } else {
+            // No dev token, skip GitHub integration  
+            githubActivity = null;
+          }
         } else {
           // Production mode: fetch GitHub activity if integration exists
           const githubIntegration = await prisma.integration.findFirst({
@@ -662,6 +842,7 @@ app.post('/standups/generate', async (req, res) => {
         }
         
         // Generate with OpenRouter
+        console.log('Generating with OpenRouter, GitHub activity:', githubActivity ? 'Found' : 'Not found');
         const openaiClient = new OpenAIClient(openrouterKey);
         const result = await openaiClient.generateStandup({
           githubActivity,
@@ -689,50 +870,111 @@ app.post('/standups/generate', async (req, res) => {
     const isDevUser = user.userId && (user.userId.includes('dev-') || user.userId.includes('fallback-'));
     
     if (isDev || isDevUser) {
-      // Return mock standup for development
-      const mockStandup = {
-        id: 'generated-' + Date.now(),
-        userId: user.userId || user.id,
+      // Development mode: store in memory with proper one-per-day logic
+      const userId = user.userId || user.id;
+      const dateKey = targetDate.toDateString();
+      
+      // Initialize user's standup storage if needed
+      if (!devStandups.has(userId)) {
+        devStandups.set(userId, new Map());
+      }
+      
+      const userStandups = devStandups.get(userId);
+      const existingStandup = userStandups.get(dateKey);
+      
+      const standupData = {
+        id: existingStandup ? existingStandup.id : 'generated-' + Date.now(),
+        userId,
         content,
         rawData: { 
           githubActivity,
           generatedWithoutIntegrations: !githubActivity,
-          dev_mode: true
+          dev_mode: true,
+          replacedPrevious: !!existingStandup,
+          replacedAt: existingStandup ? new Date() : undefined
         },
         metadata: { 
           tone,
           length,
           customPrompt,
           ...generationMetadata,
-          generated_at: new Date()
+          generated_at: new Date(),
+          replaced_count: existingStandup ? (existingStandup.metadata?.replaced_count || 0) + 1 : 0
         },
         date: targetDate,
         generatedAt: new Date().toISOString(),
       };
       
-      return res.json(mockStandup);
+      // Store/replace the standup for this date
+      userStandups.set(dateKey, standupData);
+      
+      return res.json(standupData);
     }
     
-    // Production mode: save to database
+    // Production mode: save to database (replace existing daily standup)
     try {
-      const standup = await prisma.standup.create({
-        data: {
+      // Check if there's already a standup for this date
+      const startOfDay = new Date(targetDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(targetDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existingStandup = await prisma.standup.findFirst({
+        where: {
           userId: user.userId || user.id,
-          content,
-          rawData: { 
-            githubActivity,
-            generatedWithoutIntegrations: !githubActivity 
+          date: {
+            gte: startOfDay,
+            lte: endOfDay,
           },
-          metadata: { 
-            tone,
-            length,
-            customPrompt,
-            ...generationMetadata,
-            generated_at: new Date()
-          },
-          date: targetDate,
         },
       });
+
+      let standup;
+      if (existingStandup) {
+        // Update existing standup for the day
+        standup = await prisma.standup.update({
+          where: { id: existingStandup.id },
+          data: {
+            content,
+            rawData: { 
+              githubActivity,
+              generatedWithoutIntegrations: !githubActivity,
+              replacedPrevious: true,
+              replacedAt: new Date()
+            },
+            metadata: { 
+              tone,
+              length,
+              customPrompt,
+              ...generationMetadata,
+              generated_at: new Date(),
+              replaced_count: (existingStandup.metadata?.replaced_count || 0) + 1
+            },
+            generatedAt: new Date(), // Update generation timestamp
+          },
+        });
+      } else {
+        // Create new standup for the day
+        standup = await prisma.standup.create({
+          data: {
+            userId: user.userId || user.id,
+            content,
+            rawData: { 
+              githubActivity,
+              generatedWithoutIntegrations: !githubActivity 
+            },
+            metadata: { 
+              tone,
+              length,
+              customPrompt,
+              ...generationMetadata,
+              generated_at: new Date()
+            },
+            date: targetDate,
+          },
+        });
+      }
 
       res.json(standup);
     } catch (dbError) {
@@ -772,6 +1014,30 @@ app.delete('/standups/:id', async (req, res) => {
     const user = verifyToken(req);
     if (!user) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check if we're in development mode
+    const isDev = process.env.NODE_ENV === 'development';
+    const isDevUser = user.userId && (user.userId.includes('dev-') || user.userId.includes('fallback-'));
+    
+    if (isDev || isDevUser) {
+      // Development mode: delete from in-memory storage
+      const userId = user.userId || user.id;
+      
+      if (devStandups.has(userId)) {
+        const userStandups = devStandups.get(userId);
+        
+        // Find and delete the standup by ID
+        for (const [dateKey, standup] of userStandups.entries()) {
+          if (standup.id === req.params.id) {
+            userStandups.delete(dateKey);
+            console.log('Dev mode: Deleted standup', req.params.id, 'for date', dateKey);
+            return res.json({ message: 'Standup deleted successfully (dev mode)', dev_mode: true });
+          }
+        }
+      }
+      
+      return res.status(404).json({ error: 'Standup not found (dev mode)', dev_mode: true });
     }
 
     await prisma.standup.delete({
@@ -838,6 +1104,68 @@ ${todayList}
 Generated for ${userName} at ${new Date().toLocaleString()}`;
 }
 
+// Cleanup endpoint to remove duplicate standups (keep only latest per day)
+app.post('/admin/cleanup-duplicates', async (req, res) => {
+  try {
+    const user = verifyToken(req);
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check if we're in development mode
+    const isDev = process.env.NODE_ENV === 'development';
+    const isDevUser = user.userId && (user.userId.includes('dev-') || user.userId.includes('fallback-'));
+    
+    if (isDev || isDevUser) {
+      return res.json({ 
+        message: 'Cleanup not needed in development mode',
+        dev_mode: true,
+        cleaned: 0
+      });
+    }
+
+    // Get all standups for the user
+    const allStandups = await prisma.standup.findMany({
+      where: { userId: user.userId || user.id },
+      orderBy: { generatedAt: 'desc' },
+    });
+
+    // Group by date and identify duplicates to delete
+    const standupsByDate = new Map();
+    const toDelete = [];
+    
+    allStandups.forEach(standup => {
+      const dateKey = new Date(standup.date).toDateString();
+      if (!standupsByDate.has(dateKey)) {
+        // Keep the first (most recent) standup for this date
+        standupsByDate.set(dateKey, standup);
+      } else {
+        // Mark older standups for deletion
+        toDelete.push(standup.id);
+      }
+    });
+
+    // Delete duplicate standups
+    if (toDelete.length > 0) {
+      await prisma.standup.deleteMany({
+        where: {
+          id: { in: toDelete },
+          userId: user.userId || user.id
+        }
+      });
+    }
+
+    res.json({ 
+      message: `Cleanup completed. Removed ${toDelete.length} duplicate standups.`,
+      cleaned: toDelete.length,
+      remaining: standupsByDate.size
+    });
+  } catch (error) {
+    console.error('Cleanup error:', error);
+    res.status(500).json({ error: 'Failed to cleanup duplicates' });
+  }
+});
+
 // Webhook endpoint
 app.post('/webhooks/github', (req, res) => {
   console.log('Received GitHub webhook:', req.headers['x-github-event']);
@@ -871,3 +1199,4 @@ if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
 
 // Export for Vercel
 module.exports = app;
+module.exports.devStandups = devStandups;

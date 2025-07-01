@@ -22,6 +22,11 @@ export class GitHubClient implements IntegrationClient {
     }
   }
 
+  async getCurrentUser() {
+    const { data } = await this.octokit.users.getAuthenticated();
+    return data;
+  }
+
   async fetchActivity(since: Date, until: Date = new Date()): Promise<GitHubActivity> {
     if (!this.username) {
       const { data: user } = await this.octokit.users.getAuthenticated();

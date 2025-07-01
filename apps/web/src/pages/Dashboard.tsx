@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { Link } from 'react-router-dom'
-import { Calendar, Clock, Plus, Trash2, Eye, Download, Settings } from 'lucide-react'
-import { API_ENDPOINTS } from '../config/env'
+import { Calendar, Clock, Plus, Eye, Download, Settings, LogOut } from 'lucide-react'
+import { api } from '../lib/api'
 
 interface Standup {
   id: string
@@ -13,11 +13,12 @@ interface Standup {
     tone?: string
     length?: string
     source?: string
+    replaced_count?: number
   }
 }
 
 export function Dashboard() {
-  const { token, isAuthenticated, isLoading: authLoading } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading, signOut } = useAuth()
   const [standups, setStandups] = useState<Standup[]>([])
   const [todayStandup, setTodayStandup] = useState<Standup | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -25,27 +26,18 @@ export function Dashboard() {
   const [selectedStandup, setSelectedStandup] = useState<Standup | null>(null)
 
   useEffect(() => {
-    if (token && isAuthenticated) {
+    if (isAuthenticated && user) {
       fetchStandups()
       fetchTodayStandup()
-    } else if (!authLoading && !token) {
+    } else if (!authLoading && !user) {
       setIsLoading(false)
     }
-  }, [token, isAuthenticated, authLoading])
+  }, [user, isAuthenticated, authLoading])
 
   const fetchStandups = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.standups.list, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setStandups(data)
-      }
+      const data = await api.getStandups()
+      setStandups(data)
     } catch (error) {
       console.error('Failed to fetch standups:', error)
     } finally {
@@ -55,17 +47,8 @@ export function Dashboard() {
 
   const fetchTodayStandup = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.standups.today, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        setTodayStandup(data)
-      }
+      const data = await api.getTodayStandup()
+      setTodayStandup(data)
     } catch (error) {
       console.error('Failed to fetch today\'s standup:', error)
     }
@@ -74,23 +57,12 @@ export function Dashboard() {
   const generateStandup = async () => {
     setIsGenerating(true)
     try {
-      const response = await fetch(API_ENDPOINTS.standups.generate, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tone: 'professional',
-          length: 'medium'
-        }),
+      const newStandup = await api.generateStandup({
+        tone: 'professional',
+        length: 'medium'
       })
-      
-      if (response.ok) {
-        const newStandup = await response.json()
-        setStandups(prev => [newStandup, ...prev])
-        setTodayStandup(newStandup)
-      }
+      setStandups(prev => [newStandup, ...prev])
+      setTodayStandup(newStandup)
     } catch (error) {
       console.error('Failed to generate standup:', error)
     } finally {
@@ -98,25 +70,6 @@ export function Dashboard() {
     }
   }
 
-  const deleteStandup = async (id: string) => {
-    try {
-      const response = await fetch(API_ENDPOINTS.standups.delete(id), {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-      
-      if (response.ok) {
-        setStandups(prev => prev.filter(s => s.id !== id))
-        if (todayStandup?.id === id) {
-          setTodayStandup(null)
-        }
-      }
-    } catch (error) {
-      console.error('Failed to delete standup:', error)
-    }
-  }
 
   const copyToClipboard = (content: string) => {
     navigator.clipboard.writeText(content)
@@ -152,15 +105,28 @@ export function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Daily Standups</h1>
-              <p className="mt-2 text-gray-600">Automate your daily standup preparation</p>
+              <p className="mt-2 text-gray-600">Action-focused standup generation with blocker identification</p>
+              <p className="text-sm text-gray-500 mt-1">One standup per day • Regenerate anytime to get fresh insights</p>
             </div>
-            <Link
-              to="/integrations"
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Integrations
-            </Link>
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-600">
+                Welcome, {user?.email || user?.user_metadata?.name || 'User'}
+              </div>
+              <Link
+                to="/integrations"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Integrations
+              </Link>
+              <button
+                onClick={signOut}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </button>
+            </div>
           </div>
         </div>
 
@@ -175,7 +141,7 @@ export function Dashboard() {
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                {isGenerating ? 'Generating...' : 'Generate New'}
+                {isGenerating ? 'Generating...' : todayStandup ? 'Regenerate' : 'Generate New'}
               </button>
             </div>
           </div>
@@ -193,6 +159,11 @@ export function Dashboard() {
                       <Clock className="w-4 h-4 mr-1" />
                       {new Date(todayStandup.generatedAt).toLocaleTimeString()}
                     </span>
+                    {todayStandup.metadata && todayStandup.metadata.replaced_count && todayStandup.metadata.replaced_count > 0 && (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                        Updated {todayStandup.metadata.replaced_count} time{todayStandup.metadata.replaced_count > 1 ? 's' : ''}
+                      </span>
+                    )}
                   </div>
                   <div className="flex space-x-2">
                     <button
@@ -222,6 +193,7 @@ export function Dashboard() {
                 <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">No standup generated for today yet.</p>
                 <p className="text-sm text-gray-400 mt-2">Click "Generate New" to create your daily standup.</p>
+                <p className="text-xs text-gray-400 mt-1">Your standup will focus on next steps and blockers to keep you moving forward.</p>
               </div>
             )}
           </div>
@@ -231,6 +203,7 @@ export function Dashboard() {
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">Previous Standups</h2>
+            <p className="text-sm text-gray-500 mt-1">One standup per day • Most recent version shown</p>
           </div>
           
           <div className="divide-y divide-gray-200">
@@ -275,13 +248,6 @@ export function Dashboard() {
                         title="View details"
                       >
                         <Eye className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => deleteStandup(standup.id)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Delete standup"
-                      >
-                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

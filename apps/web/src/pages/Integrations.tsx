@@ -44,10 +44,10 @@ const AVAILABLE_INTEGRATIONS = [
 export function Integrations() {
   const { data: integrations = [], isLoading, error } = useQuery({
     queryKey: ['integrations'],
-    queryFn: () => integrationsApi.list().then((res) => res.data),
+    queryFn: () => integrationsApi.list(),
   })
 
-  const connectedTypes = new Set(integrations.map(i => i.type))
+  const connectedTypes = new Set(integrations.map((i: any) => i.type))
   const availableIntegrations = AVAILABLE_INTEGRATIONS.filter(i => !connectedTypes.has(i.type as any))
 
   if (isLoading) {
@@ -108,7 +108,7 @@ export function Integrations() {
               <h2 className="text-xl font-semibold text-gray-900">Connected Platforms</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {integrations.map((integration) => (
+              {integrations.map((integration: any) => (
                 <IntegrationCard key={integration.id} integration={integration} />
               ))}
             </div>
@@ -121,7 +121,7 @@ export function Integrations() {
             {integrations.length > 0 ? 'Add More Platforms' : 'Connect Your First Platform'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {availableIntegrations.map((integration) => (
+            {availableIntegrations.map((integration: any) => (
               <AddIntegrationCard
                 key={integration.type}
                 type={integration.type}

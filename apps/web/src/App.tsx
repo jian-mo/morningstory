@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AuthCallback } from './pages/AuthCallback'
+import { Home } from './pages/Home'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
 import { Integrations } from './pages/Integrations'
@@ -29,7 +30,7 @@ function App() {
             <Dashboard />
           </ProtectedRoute>
         } />
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<Home />} />
       </Routes>
     </AuthProvider>
   )

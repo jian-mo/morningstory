@@ -1,85 +1,98 @@
-import React, { useState } from 'react'
-import { User, Eye, EyeOff } from 'lucide-react'
+import React, { useEffect } from 'react'
+import { Auth } from '@supabase/auth-ui-react'
+import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { API_ENDPOINTS } from '../config/env'
+import { supabase } from '../lib/supabase'
+import { Bot } from 'lucide-react'
 
 export function Login() {
-  const { login } = useAuth()
+  const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const [showTestLogin, setShowTestLogin] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
 
-  const handleTestLogin = async () => {
-    setIsLoading(true)
-    try {
-      // Call the test login API endpoint
-      const response = await fetch(API_ENDPOINTS.auth.testLogin, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        login(data.access_token)
-        navigate('/integrations')
-      } else {
-        console.error('Test login failed')
-      }
-    } catch (error) {
-      console.error('Test login error:', error)
-    } finally {
-      setIsLoading(false)
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard')
     }
-  }
+  }, [isAuthenticated, navigate])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome to Morning Story
+        {/* Header */}
+        <div className="text-center">
+          <div className="flex justify-center items-center space-x-2 mb-6">
+            <Bot className="h-12 w-12 text-blue-600" />
+            <span className="text-2xl font-bold text-gray-900">Morning Story</span>
+          </div>
+          <h2 className="text-3xl font-extrabold text-gray-900">
+            Welcome back
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Automate your daily standup preparation
+          <p className="mt-2 text-sm text-gray-600">
+            Sign in to automate your daily standup preparation
           </p>
         </div>
         
-        <div className="space-y-6">
-          {/* Primary Login Button */}
-          <button
-            onClick={handleTestLogin}
-            disabled={isLoading}
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            <User className="h-5 w-5 mr-2" />
-            {isLoading ? 'Signing in...' : 'Get Started'}
-          </button>
-          
-          {/* Development Note */}
-          <div className="text-center">
-            <button
-              onClick={() => setShowTestLogin(!showTestLogin)}
-              className="text-xs text-gray-500 hover:text-gray-700 flex items-center justify-center space-x-1"
-            >
-              {showTestLogin ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-              <span>{showTestLogin ? 'Hide' : 'Show'} development info</span>
-            </button>
-          </div>
-          
-          {showTestLogin && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-              <p className="text-xs text-yellow-800">
-                <strong>Development Mode:</strong> This creates a test user account. In production, this would integrate with your organization's SSO or user management system.
-              </p>
-            </div>
-          )}
+        {/* Supabase Auth UI */}
+        <div className="bg-white py-8 px-6 shadow-lg rounded-lg">
+          <Auth
+            supabaseClient={supabase}
+            appearance={{
+              theme: ThemeSupa,
+              variables: {
+                default: {
+                  colors: {
+                    brand: '#2563eb',
+                    brandAccent: '#1d4ed8',
+                  },
+                },
+              },
+              className: {
+                container: 'space-y-4',
+                button: 'w-full px-4 py-2 text-sm font-medium rounded-md transition-colors',
+                input: 'w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+              },
+            }}
+            providers={['google', 'github']}
+            redirectTo={`${window.location.origin}/dashboard`}
+            onlyThirdPartyProviders={false}
+            magicLink={true}
+            showLinks={true}
+            localization={{
+              variables: {
+                sign_in: {
+                  email_label: 'Email address',
+                  password_label: 'Password',
+                  button_label: 'Sign in',
+                  loading_button_label: 'Signing in...',
+                  social_provider_text: 'Sign in with {{provider}}',
+                  link_text: "Don't have an account? Sign up",
+                },
+                sign_up: {
+                  email_label: 'Email address',
+                  password_label: 'Create password',
+                  button_label: 'Sign up',
+                  loading_button_label: 'Signing up...',
+                  social_provider_text: 'Sign up with {{provider}}',
+                  link_text: 'Already have an account? Sign in',
+                  confirmation_text: 'Check your email for the confirmation link',
+                },
+                magic_link: {
+                  email_input_label: 'Email address',
+                  button_label: 'Send magic link',
+                  loading_button_label: 'Sending magic link...',
+                  link_text: 'Send a magic link email',
+                  confirmation_text: 'Check your email for the magic link',
+                },
+              },
+            }}
+          />
         </div>
+
+        {/* Footer */}
         <div className="text-center space-y-2">
           <p className="text-xs text-gray-500">
-            After login, you can connect your GitHub, Jira, and other tools
+            Connect GitHub, Jira, and other tools after signing in
           </p>
           <p className="text-xs text-gray-500">
             By signing in, you agree to our terms of service

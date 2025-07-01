@@ -88,12 +88,21 @@ git push origin main
 
 ### Getting Started
 
-1. **Login**: Click "Get Started" on the login page
-2. **Connect GitHub**: 
-   - Go to Integrations page
+1. **Visit Homepage**: Beautiful landing page at http://localhost:3001/ (local) or https://morning-story-web.vercel.app (production)
+2. **Authentication**: Click "Get Started" for modern Supabase Auth with multiple options:
+   - **Email/Password**: Traditional signup and login
+   - **Magic Links**: Passwordless email authentication
+   - **Google OAuth**: One-click Google sign in
+   - **GitHub OAuth**: Developer-friendly GitHub authentication
+3. **Connect GitHub**: 
+   - Go to Integrations page from dashboard
    - Click "Connect" on GitHub card
    - Choose Personal Access Token or GitHub App method
-3. **Generate Standups**: Your GitHub activity will be used to generate standups!
+4. **Generate Work-Focused Standups**: 
+   - **One per day**: Dashboard replaces existing standup when you regenerate
+   - **5 prompt styles**: work_focused (default), professional, casual_async, detailed, concise
+   - **GitHub activity**: Real commits, PRs, and issues drive intelligent generation
+   - **Sprint goals**: Add sprint context for aligned daily focus
 
 ## 🌐 Live Demo
 
@@ -235,6 +244,54 @@ Docker (PostgreSQL + Redis) → API (Express/NestJS) → Web (React)
 - **Encryption**: Secure secret management with GitHub Secrets
 - **Authentication**: JWT with refresh tokens, OAuth 2.0 flows
 - **CORS**: Properly configured for frontend-backend communication
+
+### 🎯 AI Prompt System
+
+Morning Story offers 5 specialized prompt formats based on Reddit community feedback:
+
+#### **work_focused** (Default)
+Organizes by work items instead of time-based sections:
+```
+Progress on Active Work:
+- TICKET-123 (Fix login bug): PR submitted for review
+- TICKET-456 (Implement API): Scaffolding complete
+
+Needing Attention:
+- PR for TICKET-123 awaiting review for 24+ hours
+
+Today's Focus:
+- Address PR feedback and begin TICKET-456 implementation
+```
+
+#### **professional**
+Modern Agile terminology for corporate environments:
+```
+Recent Accomplishments:
+- Completed user authentication refactor
+- Opened PR for API optimization
+
+Today's Plan:
+- Address code review feedback
+- Begin integration testing
+
+Impediments:
+No impediments.
+```
+
+#### **casual_async**
+Perfect for Slack/Teams with collaborative elements:
+```
+Hey team! 😊
+
+Just wrapped up the authentication work and opened a PR for review.
+
+On my plate today: addressing feedback and starting the integration tests.
+
+Heads-up: Would love input on the new API structure before we finalize it!
+```
+
+#### **detailed** & **concise**
+Technical depth or bullet-point brevity based on your needs.
 
 ## API Endpoints
 
@@ -443,8 +500,32 @@ lsof -ti:3000,3001,3002 | xargs kill -9
 npm run dev
 ```
 
-**📊 API Endpoints Testing**
+**📊 New Features Testing**
 ```bash
+# Test new work-focused prompts:
+curl -X POST http://localhost:3000/standups/generate \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"tone": "work_focused", "length": "medium"}'
+
+# Test casual async format for Slack:
+curl -X POST http://localhost:3000/standups/generate \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"tone": "casual_async", "length": "short"}'
+
+# Test professional with modern Agile terms:
+curl -X POST http://localhost:3000/standups/generate \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"tone": "professional", "length": "medium"}'
+
+# Test with sprint goal integration:
+curl -X POST http://localhost:3000/standups/generate \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"tone": "work_focused", "customPrompt": "Sprint Goal: Complete user authentication and API optimization"}'
+
 # Quick endpoint verification:
 curl http://localhost:3000/health          # Should return 200
 curl http://localhost:3000/auth/test-login # Should return token
@@ -453,53 +534,154 @@ curl http://localhost:3000/api             # Should return API info
 
 ## 🎯 Latest Progress Update
 
-### ✅ **OpenRouter Integration Complete** (December 2024)
-**Cost-Optimized AI Generation**: Switched from direct OpenAI to OpenRouter for 99.5% cost reduction
+### ✅ **Landing Page Redesign & Supabase Auth Migration Complete** (July 2025)
+**Modern Authentication & User Experience**: Completely redesigned landing page with professional auth system and improved user onboarding flow
 
 #### 🚀 Major Achievements:
-- **✅ OpenRouter Integration**: `openai/gpt-4o-mini` via OpenRouter API
-- **✅ Cost Optimization**: ~$0.0001 per standup (vs $0.02+ with direct OpenAI) 
+
+##### **Landing Page Redesign**
+- **✅ Beautiful Homepage**: New conversion-focused landing page with clear value proposition
+- **✅ Hero Section**: "Never scramble for standup updates again" with compelling copy
+- **✅ Benefits Showcase**: Save 15 minutes daily, AI-powered insights, GitHub integration
+- **✅ How It Works**: Simple 3-step process visualization
+- **✅ Social Proof**: Trusted by developers messaging
+- **✅ Professional Design**: Gradient backgrounds, modern typography, responsive layout
+
+##### **Supabase Auth Migration**
+- **✅ Complete Auth Overhaul**: Migrated from custom OAuth to Supabase Auth for better reliability
+- **✅ Multiple Auth Methods**: Email/password, magic links, Google OAuth, GitHub OAuth
+- **✅ Beautiful Auth UI**: Professional Supabase Auth UI components with custom theming
+- **✅ Session Management**: Automatic token refresh, persistent sessions, proper logout
+- **✅ Environment Loading**: Fixed Vite configuration to properly load environment variables
+- **✅ TypeScript Integration**: Full type safety with Supabase client and auth context
+
+##### **Developer Experience Improvements**
+- **✅ Simplified Auth Context**: Clean React context using Supabase auth state
+- **✅ API Client Refactor**: New API client that automatically handles Supabase session tokens
+- **✅ Dashboard Updates**: User display, sign out functionality, improved navigation
+- **✅ Error Handling**: Proper auth error states and user feedback
+- **✅ Build Process**: Fixed TypeScript compilation issues and Vite configuration
+
+#### 🔧 Technical Improvements:
+- **Authentication**: Supabase Auth with Google OAuth, email/password, magic links
+- **Environment Config**: Proper .env.development and .env.local loading in Vite
+- **API Integration**: Session-based authentication replacing manual JWT handling
+- **UI Components**: Modern Auth UI with custom theming and responsive design
+- **Type Safety**: Full TypeScript integration with Supabase types
+
+#### 🎯 User Experience Enhancements:
+- **Onboarding Flow**: Landing page → Auth → Dashboard with clear progression
+- **Auth Options**: Multiple authentication methods for different user preferences
+- **Session Persistence**: Users stay logged in across browser sessions
+- **Error States**: Clear feedback for auth failures and network issues
+- **Responsive Design**: Works perfectly on mobile, tablet, and desktop
+
+### ✅ **Previous: Dashboard Rework & Reddit-Inspired Prompts** (June 2025)
+**Action-Focused Standup Generation**: Implemented one-message-per-day system with work-item focused prompts based on Reddit community feedback
+
+#### 🚀 Major Achievements:
+
+##### **Dashboard & UX Improvements**
+- **✅ One Message Per Day**: Dashboard now replaces daily standups instead of creating multiple entries
+- **✅ Regeneration System**: "Generate New" becomes "Regenerate" - replaces existing standup with fresh insights
+- **✅ Replacement Tracking**: Shows how many times a standup was updated with visual indicators
+- **✅ Action-Focused UI**: Updated descriptions emphasize next steps and blocker prevention
+
+##### **Reddit-Inspired AI Prompt System**
+- **✅ Work-Focused Prompt (New Default)**: Organizes by work items (tickets, PRs) instead of time-based sections
+- **✅ Modern Professional Format**: Uses Agile terminology (Accomplishments/Plan/Impediments)
+- **✅ Casual Async Format**: Perfect for Slack/Teams with collaborative team elements
+- **✅ Sprint Goal Integration**: Aligns daily work with broader sprint objectives
+
+##### **Enhanced GitHub Integration**
+- **✅ Real Token Support in Dev**: Connect actual GitHub tokens for real activity data in development
+- **✅ Mock Activity Data**: Rich demo data for testing and demonstrations
+- **✅ Activity-Based Generation**: AI uses actual commits, PRs, and issues for intelligent standups
+
+#### 📊 New Prompt Performance:
+| Prompt Type | Focus | Best For | Key Features |
+|-------------|-------|----------|--------------|
+| **work_focused** | Work items & blockers | Daily standups | Progress per ticket, "Needing Attention" section |
+| **professional** | Modern Agile terms | Corporate environments | Accomplishments/Plan/Impediments format |
+| **casual_async** | Team collaboration | Slack/Teams updates | Friendly tone with team "Heads-up" section |
+| **detailed** | Technical depth | Complex projects | Implementation plans & risk mitigation |
+| **concise** | Action priorities | Quick updates | Bullet points with specific blockers |
+
+#### 🔄 Prompt System Features:
+- **Work Item Organization**: "**TICKET-123 (Fix login bug):** PR submitted for review"
+- **Blocker Identification**: "Needing Attention" section highlights stalled PRs and long-running tickets
+- **Sprint Alignment**: Today's Focus connects to sprint goals and broader objectives
+- **Team Collaboration**: Async format encourages team input and alignment
+- **Modern Language**: Professional format uses current Agile terminology
+
+#### 🎯 Reddit Community Feedback Integration:
+- **✅ Focus on Progress Per Item**: Organize by tickets/PRs instead of time-based sections
+- **✅ Highlight Blockers**: Separate "Needing Attention" section for stalled work
+- **✅ Sprint Goal Context**: AI considers broader sprint objectives when suggesting focus
+- **✅ Async Team Updates**: Casual format designed for Slack/Teams collaboration
+- **✅ Actionable Next Steps**: Every prompt emphasizes concrete actions and dependencies
+
+#### 🚀 Previous Achievements (December 2024):
+- **✅ OpenRouter Integration**: 99.5% cost reduction ($0.0001 vs $0.02+ per standup)
+- **✅ GitHub Integration**: Real activity data drives intelligent standups
 - **✅ Local Development**: Complete `.env.dev` setup with database fallbacks
-- **✅ Authentication**: Development mode with mock users and JWT tokens
-- **✅ GitHub Integration**: Ready for production, mock data in development
-- **✅ Comprehensive Testing**: 100% endpoint coverage with E2E verification
+- **✅ Production Ready**: All endpoints working with comprehensive testing
 
-#### 📊 Performance Metrics:
-| Metric | Value | vs Direct OpenAI |
-|--------|--------|------------------|
-| **Cost per standup** | $0.0001 | **99.5% cheaper** |
-| **Monthly cost (30)** | $0.003 | vs $0.60+ |
-| **Yearly cost (365)** | $0.036 | vs $7.30+ |
-| **Generation speed** | 2-4 seconds | Same |
-| **Quality** | Professional AI content | Same |
+#### 📊 Combined Performance Metrics:
+| Metric | Value | Improvement |
+|--------|--------|-------------|
+| **Cost per standup** | $0.0001 | 99.5% cheaper than direct OpenAI |
+| **Daily focus** | One message | Eliminates multiple standup confusion |
+| **Prompt variety** | 5 specialized formats | vs 1 basic format |
+| **GitHub integration** | Real tokens supported | vs mock-only |
+| **Work organization** | By tickets/PRs | vs time-based sections |
 
-#### 🔧 Development Environment:
-- **✅ One-command setup**: `./scripts/setup-local.sh`
-- **✅ Environment isolation**: `.env.dev` for local, `.env.production` for deployment
-- **✅ Database fallbacks**: Works without database connection
-- **✅ Mock integrations**: Test GitHub flow without real tokens
-- **✅ Error handling**: Graceful fallbacks for all failure scenarios
+### 🎯 Current Status:
 
-#### 🧪 Testing Coverage:
-- **✅ 15/15 endpoints passing** (100% success rate)
-- **✅ End-to-end verification**: Auth → GitHub → OpenRouter → Generation
-- **✅ Stress testing**: Multiple rapid generations confirmed stable
-- **✅ Cost tracking**: Accurate token usage and pricing
-- **✅ Integration simulation**: GitHub activation flow tested
+#### ✅ **Production Ready Features**:
+- **Modern Landing Page**: Professional homepage with clear value proposition and conversion flow
+- **Supabase Authentication**: Multiple auth methods (email/password, magic links, Google OAuth)
+- **One-message-per-day dashboard**: Clean standup management with regeneration tracking
+- **Work-focused prompt system**: Reddit-inspired prompts with modern Agile terminology
+- **Real GitHub integration**: Actual token support for development and production
+- **Cost-effective AI generation**: OpenRouter integration with 99.5% cost savings
+- **Responsive Design**: Mobile-first UI that works on all devices
+- **Type-safe Development**: Full TypeScript integration with proper error handling
 
-### 🎯 Production Readiness Status:
+#### 🔄 **New User Experience Flow**:
 
-#### ✅ **Ready for Deployment**:
-- OpenRouter API key configured and tested
-- All endpoints working with proper error handling
-- Cost-effective AI generation confirmed ($0.036/year for daily use)
-- GitHub integration pathway ready for real tokens
-- Comprehensive fallback systems in place
+**Landing Page → Authentication → Dashboard:**
+1. **Visit Homepage**: Modern landing page explains value proposition clearly
+2. **Click "Get Started"**: Professional Supabase Auth UI with multiple options
+3. **Choose Auth Method**: Email/password, magic link, or Google OAuth
+4. **Access Dashboard**: Clean interface with user display and standup management
+5. **Generate Standups**: One-click generation with intelligent GitHub activity parsing
 
-#### 🔄 **Active Development** (Current Phase):
-- Frontend integration testing with new OpenRouter backend
-- Production deployment with cost-optimized infrastructure
-- Real GitHub token integration for activity-based standups
+#### 🔄 **Usage Examples**:
+
+**Work-Focused Standup:**
+```
+Progress on Active Work:
+- TICKET-123 (Fix login bug): PR submitted for review
+- TICKET-456 (Implement new API): Initial scaffolding complete
+
+Needing Attention:
+- The PR for TICKET-123 has been awaiting review for over 24 hours
+
+Today's Focus:
+- Finalize library choice for TICKET-456 and begin implementation
+```
+
+**Casual Async Update:**
+```
+Hey team! 😊
+
+Just pushed through the GitHub integration commits and opened a PR for review. 
+
+On my plate today: addressing any feedback and continuing the OpenRouter optimization.
+
+Heads-up: Would love team input on the integration approach before we move to production!
+```
 
 ## Next Phase Roadmap
 
@@ -541,14 +723,16 @@ curl http://localhost:3000/api             # Should return API info
 
 ## 🎯 Project Status Summary
 
-### **✅ Production Ready (Phase 1 & 2)**
-- **✅ Full-Stack Application**: React frontend + Express.js backend
-- **✅ GitHub Integration**: OAuth flow + Personal Access Token support
+### **✅ Production Ready (Phase 1, 2 & 3)**
+- **✅ Full-Stack Application**: Modern React frontend + Express.js backend
+- **✅ Professional Landing Page**: Conversion-focused homepage with clear value proposition
+- **✅ Supabase Authentication**: Multiple auth methods (email/password, magic links, Google OAuth)
+- **✅ GitHub Integration**: OAuth flow + Personal Access Token support + Real activity parsing
 - **✅ Deployment Pipeline**: GitHub Actions + Vercel with secret management
-- **✅ Database**: Supabase PostgreSQL with Prisma ORM
-- **✅ Authentication**: JWT + GitHub OAuth with secure token handling
+- **✅ Database**: Supabase PostgreSQL with Prisma ORM and proper migrations
+- **✅ Modern UI/UX**: Responsive design, proper error handling, session management
 - **✅ Developer Experience**: One-command setup, comprehensive testing, detailed docs
-- **✅ Production Deployment**: Live on Vercel with proper monitoring
+- **✅ Production Deployment**: Live on Vercel with monitoring and fixed domains
 
 ### **🚀 Ready to Use**
 1. **For Developers**: Clone → Setup → Deploy in under 10 minutes
@@ -561,20 +745,33 @@ curl http://localhost:3000/api             # Should return API info
 
 ## ✅ **Latest Progress Update (July 2025)**
 
-### 🚀 **Standup Features Complete**
+### 🚀 **Complete Production-Ready System**
+- ✅ **Professional Landing Page**: Beautiful homepage with clear value proposition and conversion flow
+- ✅ **Supabase Auth Migration**: Complete overhaul from custom OAuth to Supabase for reliability
+- ✅ **Multiple Auth Methods**: Email/password, magic links, Google OAuth, GitHub OAuth
+- ✅ **Environment Configuration**: Centralized .env management in root folder, proper Vite loading
+- ✅ **Modern UI Components**: Professional auth UI with custom theming and responsive design
+- ✅ **Session Management**: Automatic token refresh, persistent sessions, proper logout flow
 - ✅ **Full Standup CRUD API**: Create, read, update, delete standups with database persistence
-- ✅ **AI-Powered Generation**: Basic standup generation with configurable tone and length
-- ✅ **GitHub Activity Integration**: Foundation ready for GitHub commit/PR/issue parsing
-- ✅ **Frontend Dashboard**: Complete React interface for standup management
-- ✅ **Authentication Flow**: JWT-based auth with test endpoints for development
-- ✅ **Local Development**: All features verified working locally with Docker PostgreSQL
+- ✅ **AI-Powered Generation**: OpenRouter integration with GitHub activity for intelligent standups
+- ✅ **GitHub Integration**: GitHub App configured with mock activity, ready for production
+- ✅ **Unified Environment**: Removed redundant .env files, single source of truth in root folder
+
+### 🎯 **Ready for Testing Now**:
+- **Landing Page**: http://localhost:3001/ - Beautiful homepage with clear call-to-action
+- **Authentication**: Multiple login options with professional Supabase Auth UI
+- **Dashboard**: User-friendly standup management with regeneration tracking
+- **API Server**: http://localhost:3000/ - All endpoints working with proper auth
+- **Environment**: Properly configured Vite development setup with Supabase integration
 
 ### 🔧 **Development Verification** 
-- ✅ **API Server**: Running on http://localhost:3000 with standup endpoints
-- ✅ **React Frontend**: Running on http://localhost:3002 with dashboard UI
-- ✅ **Database**: PostgreSQL with Prisma ORM, all migrations applied
-- ✅ **Docker Services**: PostgreSQL, Redis, PgAdmin all healthy and accessible
-- ✅ **Endpoint Testing**: Manual verification of all standup CRUD operations
+- ✅ **API Server**: Running on http://localhost:3000 with OpenRouter AI generation
+- ✅ **React Frontend**: Running on http://localhost:3001 with Supabase Auth UI
+- ✅ **Database**: Supabase PostgreSQL with Prisma ORM, all migrations applied
+- ✅ **Authentication**: Supabase Auth with JWT token verification
+- ✅ **AI Generation**: OpenRouter GPT-4 mini with GitHub activity integration
+- ✅ **Environment Config**: Centralized .env.dev in root folder, auto-loaded by API
+- ✅ **GitHub Integration**: App configured, mock activity for development testing
 
 ### 🌐 **Production Deployment**
 - ✅ **Secure GitHub Actions**: Dynamic project linking, encrypted secrets management

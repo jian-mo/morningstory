@@ -1,34 +1,79 @@
-import axios from 'axios'
-import { ENV } from '../config/env'
+import { supabase } from './supabase'
 
-const API_BASE_URL = ENV.API_BASE_URL
-
-export const api = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
-})
-
-// Request interceptor to add auth token
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('authToken')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-// Response interceptor to handle auth errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('authToken')
-      window.location.href = '/login'
+class ApiClient {
+  private async getAuthHeaders() {
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    if (!session?.access_token) {
+      throw new Error('No authentication token available')
     }
-    return Promise.reject(error)
-  }
-)
 
+    return {
+      'Authorization': `Bearer ${session.access_token}`,
+      'Content-Type': 'application/json',
+    }
+  }
+
+  async request(endpoint: string, options: RequestInit = {}) {
+    const headers = await this.getAuthHeaders()
+    
+    const response = await fetch(endpoint, {
+      ...options,
+      headers: {
+        ...headers,
+        ...options.headers,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`)
+    }
+
+    return response.json()
+  }
+
+  // Standup methods
+  async getStandups() {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    return this.request(`${apiUrl}/standups`)
+  }
+
+  async getTodayStandup() {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    return this.request(`${apiUrl}/standups/today`)
+  }
+
+  async generateStandup(data: { tone: string; length: string; customPrompt?: string }) {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    return this.request(`${apiUrl}/standups/generate`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteStandup(id: string) {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    return this.request(`${apiUrl}/standups/${id}`, {
+      method: 'DELETE',
+    })
+  }
+
+  // Integrations
+  async getIntegrations() {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    return this.request(`${apiUrl}/integrations`)
+  }
+}
+
+export const api = new ApiClient()
+
+// Legacy API for compatibility
+export const integrationsApi = {
+  list: () => api.getIntegrations(),
+  remove: (type: string) => api.request(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/integrations/${type}`, { method: 'DELETE' })
+}
+
+// Legacy exports for compatibility
 export interface User {
   id: string
   email: string
@@ -45,31 +90,4 @@ export interface Integration {
   createdAt: string
   updatedAt: string
   metadata?: Record<string, any>
-}
-
-export interface AuthResponse {
-  access_token: string
-  user: User
-}
-
-// Auth API
-export const authApi = {
-  me: () => api.get<User>('/auth/me'),
-  login: (email: string, password: string) =>
-    api.post<AuthResponse>('/auth/login', { email, password }),
-  register: (email: string, password: string, name: string) =>
-    api.post<AuthResponse>('/auth/register', { email, password, name }),
-}
-
-// Integrations API
-export const integrationsApi = {
-  list: () => api.get<Integration[]>('/integrations'),
-  remove: (type: string) => api.delete(`/integrations/${type}`),
-}
-
-// Standups API
-export const standupsApi = {
-  list: () => api.get('/standups'),
-  today: () => api.get('/standups/today'),
-  generate: (data: any) => api.post('/standups/generate', data),
 }

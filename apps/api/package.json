@@ -17,11 +17,13 @@
   "dependencies": {
     "@octokit/rest": "^21.1.1",
     "@prisma/client": "^5.22.0",
+    "@types/passport-google-oauth20": "^2.0.16",
     "cors": "^2.8.5",
     "dotenv": "^17.0.0",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
-    "openai": "^5.8.2"
+    "openai": "^5.8.2",
+    "passport-google-oauth20": "^2.0.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",

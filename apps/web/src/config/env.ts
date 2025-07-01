@@ -14,6 +14,8 @@ export const API_ENDPOINTS = {
     me: `${ENV.API_BASE_URL}/auth/me`,
     login: `${ENV.API_BASE_URL}/auth/login`,
     register: `${ENV.API_BASE_URL}/auth/register`,
+    google: `${ENV.API_BASE_URL}/auth/google`,
+    github: `${ENV.API_BASE_URL}/auth/github`,
   },
   integrations: {
     list: `${ENV.API_BASE_URL}/integrations`,

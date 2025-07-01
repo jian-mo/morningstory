@@ -1,29 +1,22 @@
 import React, { useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export function AuthCallback() {
-  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { user, isLoading } = useAuth()
 
   useEffect(() => {
-    const token = searchParams.get('token')
-    const error = searchParams.get('error')
-
-    if (error) {
-      console.error('OAuth error:', error)
-      navigate('/login?error=oauth_failed')
-      return
+    // Supabase handles OAuth callbacks automatically
+    // This component just redirects authenticated users to dashboard
+    if (!isLoading) {
+      if (user) {
+        navigate('/dashboard')
+      } else {
+        navigate('/login?error=auth_failed')
+      }
     }
-
-    if (token) {
-      login(token)
-      navigate('/dashboard')
-    } else {
-      navigate('/login?error=no_token')
-    }
-  }, [searchParams, navigate, login])
+  }, [user, isLoading, navigate])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

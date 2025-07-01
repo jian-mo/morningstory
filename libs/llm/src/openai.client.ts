@@ -58,8 +58,12 @@ export class OpenAIClient {
   }
 
   private buildUserPrompt(template: string, request: StandupGenerationRequest): string {
+    const activityData = this.formatGitHubActivity(request.githubActivity);
+    
     return template
-      .replace('{githubActivity}', this.formatGitHubActivity(request.githubActivity))
+      .replace('{githubActivity}', activityData) // Legacy support
+      .replace('{activityData}', activityData) // New format
+      .replace('{sprintGoal}', request.preferences.sprintGoal || 'No specific sprint goal provided.')
       .replace('{tone}', request.preferences.tone)
       .replace('{length}', request.preferences.length)
       .replace('{date}', request.date.toDateString())

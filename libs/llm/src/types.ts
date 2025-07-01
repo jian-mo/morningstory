@@ -6,6 +6,7 @@ export interface StandupGenerationRequest {
     tone: string;
     length: string;
     customPrompt?: string;
+    sprintGoal?: string;
   };
   date: Date;
 }
