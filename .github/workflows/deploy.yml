@@ -32,8 +32,6 @@ jobs:
       - name: Deploy API to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_API }}
         run: |
           cd apps/api
           
@@ -60,11 +58,11 @@ jobs:
             echo "${{ secrets.GH_APP_PRIVATE_KEY }}" | vercel env add GITHUB_APP_PRIVATE_KEY production --force --token $VERCEL_TOKEN
           fi
           
-          # Deploy to fixed domain
+          # Deploy to fixed domain with inline environment variables
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            vercel --prod --token $VERCEL_TOKEN --yes
+            VERCEL_ORG_ID="${{ secrets.VERCEL_ORG_ID }}" VERCEL_PROJECT_ID="${{ secrets.VERCEL_PROJECT_ID_API }}" vercel --prod --token $VERCEL_TOKEN --yes
           else
-            vercel --token $VERCEL_TOKEN --yes
+            VERCEL_ORG_ID="${{ secrets.VERCEL_ORG_ID }}" VERCEL_PROJECT_ID="${{ secrets.VERCEL_PROJECT_ID_API }}" vercel --token $VERCEL_TOKEN --yes
           fi
           
           echo "🚀 API deployed to: $API_DOMAIN"
@@ -72,8 +70,6 @@ jobs:
       - name: Deploy Web to Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEB }}
         run: |
           cd apps/web
           
@@ -81,11 +77,11 @@ jobs:
           echo "Setting VITE_API_URL to: $API_DOMAIN"
           echo "$API_DOMAIN" | vercel env add VITE_API_URL production --force --token $VERCEL_TOKEN
           
-          # Deploy to fixed domain
+          # Deploy to fixed domain with inline environment variables
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            vercel --prod --token $VERCEL_TOKEN --yes
+            VERCEL_ORG_ID="${{ secrets.VERCEL_ORG_ID }}" VERCEL_PROJECT_ID="${{ secrets.VERCEL_PROJECT_ID_WEB }}" vercel --prod --token $VERCEL_TOKEN --yes
           else
-            vercel --token $VERCEL_TOKEN --yes
+            VERCEL_ORG_ID="${{ secrets.VERCEL_ORG_ID }}" VERCEL_PROJECT_ID="${{ secrets.VERCEL_PROJECT_ID_WEB }}" vercel --token $VERCEL_TOKEN --yes
           fi
           
           echo "🌐 Web app deployed to: $WEB_DOMAIN"
