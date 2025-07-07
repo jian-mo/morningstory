@@ -15,7 +15,7 @@
     "test:coverage": "NODE_ENV=test jest --config jest.config.simple.js --coverage"
   },
   "prisma": {
-    "schema": "prisma/schema.prisma"
+    "schema": "schema.prisma"
   },
   "dependencies": {
     "@octokit/rest": "^21.1.1",
