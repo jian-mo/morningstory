@@ -7,12 +7,15 @@
     "start": "node -r dotenv/config index-db.js dotenv_config_path=../../.env.dev",
     "dev": "node -r dotenv/config index-db.js dotenv_config_path=../../.env.dev",
     "prod": "node index-db.js",
-    "build": "prisma generate --schema=./prisma/schema.prisma",
-    "vercel-build": "prisma generate --schema=./prisma/schema.prisma",
-    "postinstall": "prisma generate --schema=./prisma/schema.prisma",
+    "build": "prisma generate",
+    "vercel-build": "prisma generate",
+    "postinstall": "echo 'Skipping postinstall in Vercel'",
     "test": "NODE_ENV=test jest --config jest.config.simple.js",
     "test:watch": "NODE_ENV=test jest --config jest.config.simple.js --watch",
     "test:coverage": "NODE_ENV=test jest --config jest.config.simple.js --coverage"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
   },
   "dependencies": {
     "@octokit/rest": "^21.1.1",
