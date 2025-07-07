@@ -6,7 +6,7 @@
       "src": "index-db.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": "prisma/**"
+        "includeFiles": ["prisma/**", "libs/**"]
       }
     }
   ],

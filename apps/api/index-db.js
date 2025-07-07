@@ -15,8 +15,8 @@ const cors = require('cors');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const prisma = require('./lib/prisma');
-const { OpenAIClient } = require('../../libs/llm/dist/openai.client');
-const { GitHubClient } = require('../../libs/integrations/dist/github/github.client');
+const { OpenAIClient } = require('./libs/llm/dist/openai.client');
+const { GitHubClient } = require('./libs/integrations/dist/github/github.client');
 
 const app = express();
 
