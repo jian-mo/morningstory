@@ -8,8 +8,10 @@ import { AuthCallback } from '../AuthCallback'
 vi.mock('../../lib/supabase', () => ({
   supabase: {
     auth: {
-      setSession: vi.fn(),
-      getUser: vi.fn()
+      onAuthStateChange: vi.fn(() => ({
+        data: { subscription: { unsubscribe: vi.fn() } }
+      })),
+      getSession: vi.fn()
     }
   }
 }))
@@ -53,18 +55,22 @@ const renderWithRouter = (component: React.ReactElement, hash = '', search = '')
 }
 
 describe('AuthCallback', () => {
-  const mockSetSession = vi.fn()
-  const mockGetUser = vi.fn()
+  const mockOnAuthStateChange = vi.fn()
+  const mockGetSession = vi.fn()
+  const mockUnsubscribe = vi.fn()
   
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
     
+    // Set up the mock subscription
+    mockOnAuthStateChange.mockReturnValue({
+      data: { subscription: { unsubscribe: mockUnsubscribe } }
+    })
+    
     // Get the mocked supabase and assign the mock functions
-    const { supabase } = require('../../lib/supabase')
-    mockSetSession.mockClear()
-    mockGetUser.mockClear()
-    supabase.auth.setSession = mockSetSession
-    supabase.auth.getUser = mockGetUser
+    const supabaseModule = await vi.importMock('../../lib/supabase')
+    supabaseModule.supabase.auth.onAuthStateChange = mockOnAuthStateChange
+    supabaseModule.supabase.auth.getSession = mockGetSession
   })
 
   afterEach(() => {
@@ -72,6 +78,8 @@ describe('AuthCallback', () => {
   })
 
   it('renders loading state', () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } })
+    
     renderWithRouter(<AuthCallback />)
 
     expect(screen.getByText('Completing authentication...')).toBeInTheDocument()
@@ -79,141 +87,66 @@ describe('AuthCallback', () => {
     expect(screen.getByRole('status')).toBeInTheDocument() // Loading spinner
   })
 
-  it('handles successful OAuth callback with tokens', async () => {
-    // Mock OAuth tokens in URL hash
-    const hash = '#access_token=test_access_token&refresh_token=test_refresh_token&expires_at=1736466000&token_type=bearer'
-    
-    mockSetSession.mockResolvedValue({
-      data: { session: { access_token: 'test_access_token', user: { id: 'user1' } } },
-      error: null
-    })
+  it('redirects to dashboard when session exists', async () => {
+    const mockSession = { access_token: 'token', user: { id: 'user1' } }
+    mockGetSession.mockResolvedValue({ data: { session: mockSession } })
 
-    renderWithRouter(<AuthCallback />, hash)
+    renderWithRouter(<AuthCallback />)
 
     await waitFor(() => {
-      expect(mockSetSession).toHaveBeenCalledWith({
-        access_token: 'test_access_token',
-        refresh_token: 'test_refresh_token'
-      })
+      expect(mockGetSession).toHaveBeenCalled()
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
     })
+  })
+
+  it('listens for auth state changes', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } })
+
+    renderWithRouter(<AuthCallback />)
+
+    await waitFor(() => {
+      expect(mockOnAuthStateChange).toHaveBeenCalled()
+    })
+
+    // Simulate successful sign in
+    const authCallback = mockOnAuthStateChange.mock.calls[0][0]
+    const mockSession = { access_token: 'token', user: { id: 'user1' } }
+    authCallback('SIGNED_IN', mockSession)
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
     })
   })
 
-  it('handles Invalid API key error with localStorage fallback', async () => {
-    const hash = '#access_token=test_access_token&refresh_token=test_refresh_token&expires_at=1736466000&token_type=bearer'
-    
-    mockSetSession.mockResolvedValue({
-      data: null,
-      error: { message: 'Invalid API key' }
-    })
+  it('redirects to login on auth failure', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } })
 
-    mockGetUser.mockResolvedValue({
-      data: { user: { id: 'user1', email: 'test@example.com' } },
-      error: null
-    })
-
-    renderWithRouter(<AuthCallback />, hash)
+    renderWithRouter(<AuthCallback />)
 
     await waitFor(() => {
-      expect(mockSetSession).toHaveBeenCalled()
+      expect(mockOnAuthStateChange).toHaveBeenCalled()
     })
 
-    await waitFor(() => {
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
-        'supabase.auth.token',
-        expect.stringContaining('test_access_token')
-      )
-    })
+    // Simulate auth failure
+    const authCallback = mockOnAuthStateChange.mock.calls[0][0]
+    authCallback('USER_UPDATED', null)
 
     await waitFor(() => {
-      expect(mockGetUser).toHaveBeenCalledWith('test_access_token')
-    })
-
-    // Should redirect to dashboard
-    expect(window.location.href).toBe('/dashboard')
-  })
-
-  it('handles OAuth error in URL', async () => {
-    const search = '?error=access_denied'
-
-    renderWithRouter(<AuthCallback />, '', search)
-
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/login?error=oauth_error')
+      expect(mockNavigate).toHaveBeenCalledWith('/login?error=auth_failed')
     })
   })
 
-  it('handles missing tokens', async () => {
-    const hash = '#state=random_state'
+  it('unsubscribes from auth changes on unmount', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } })
 
-    renderWithRouter(<AuthCallback />, hash)
-
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/login?error=no_tokens')
-    })
-  })
-
-  it('handles session error (not Invalid API key)', async () => {
-    const hash = '#access_token=test_access_token&refresh_token=test_refresh_token&expires_at=1736466000'
-    
-    mockSetSession.mockResolvedValue({
-      data: null,
-      error: { message: 'Some other error' }
-    })
-
-    renderWithRouter(<AuthCallback />, hash)
+    const { unmount } = renderWithRouter(<AuthCallback />)
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/login?error=session_error')
-    })
-  })
-
-  it('creates proper session object for localStorage', async () => {
-    const hash = '#access_token=test_access_token&refresh_token=test_refresh_token&expires_at=1736466000&token_type=bearer'
-    
-    mockSetSession.mockResolvedValue({
-      data: null,
-      error: { message: 'Invalid API key' }
+      expect(mockOnAuthStateChange).toHaveBeenCalled()
     })
 
-    mockGetUser.mockResolvedValue({
-      data: { user: { id: 'user1' } },
-      error: null
-    })
+    unmount()
 
-    renderWithRouter(<AuthCallback />, hash)
-
-    await waitFor(() => {
-      expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
-        'supabase.auth.token',
-        expect.stringContaining('"access_token":"test_access_token"')
-      )
-    })
-
-    // Verify the stored data structure
-    const storedData = JSON.parse(mockLocalStorage.setItem.mock.calls[0][1])
-    expect(storedData).toEqual({
-      access_token: 'test_access_token',
-      refresh_token: 'test_refresh_token',
-      expires_at: 1736466000,
-      expires_in: expect.any(Number),
-      token_type: 'bearer',
-      user: null
-    })
-  })
-
-  it('handles callback error gracefully', async () => {
-    const hash = '#access_token=test_access_token&refresh_token=test_refresh_token'
-    
-    mockSetSession.mockRejectedValue(new Error('Network error'))
-
-    renderWithRouter(<AuthCallback />, hash)
-
-    await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/login?error=callback_error')
-    })
+    expect(mockUnsubscribe).toHaveBeenCalled()
   })
 })

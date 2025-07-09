@@ -11,5 +11,11 @@ module.exports = {
     '**/tests/**/*.test.js'
   ],
   testTimeout: 30000,
-  verbose: true
+  verbose: true,
+  transform: {
+    '^.+\.m?js$': 'babel-jest'
+  },
+  transformIgnorePatterns: [
+    '/node_modules/(?!@octokit/rest|@octokit/core)'
+  ]
 };
