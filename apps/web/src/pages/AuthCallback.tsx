@@ -1,83 +1,59 @@
 import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
 
 export function AuthCallback() {
   const navigate = useNavigate()
-  const { user, isLoading, session } = useAuth()
+  const { user, isLoading } = useAuth()
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
+    const handleAuthCallback = () => {
       console.log('AuthCallback: Processing OAuth callback...')
       console.log('Current URL:', window.location.href)
-      console.log('URL search params:', window.location.search)
       
-      try {
-        // Check if there's an OAuth callback in the URL (both query params and hash)
-        const urlParams = new URLSearchParams(window.location.search)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        
-        const code = urlParams.get('code')
-        const accessToken = hashParams.get('access_token')
-        const error = urlParams.get('error') || hashParams.get('error')
-        
-        console.log('OAuth code from URL:', code ? 'Found' : 'Not found')
-        console.log('OAuth access_token from hash:', accessToken ? 'Found' : 'Not found')
-        console.log('OAuth error from URL:', error)
-        
-        if (error) {
-          console.error('OAuth error in URL:', error)
-          navigate('/login?error=oauth_error')
-          return
-        }
+      // Check for errors in URL
+      const urlParams = new URLSearchParams(window.location.search)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const error = urlParams.get('error') || hashParams.get('error')
+      
+      if (error) {
+        console.error('OAuth error in URL:', error)
+        navigate('/login?error=oauth_error')
+        return
+      }
 
-        if (code || accessToken) {
-          console.log('OAuth tokens found, waiting for Supabase to process...')
-          // Wait longer for Supabase to automatically process the OAuth callback
-          await new Promise(resolve => setTimeout(resolve, 3000))
-        }
-        
-        // Force Supabase to check for session in URL
-        console.log('Checking for session in URL...')
-        const { data: urlSession, error: urlError } = await supabase.auth.getSessionFromUrl()
-        console.log('URL session data:', urlSession)
-        console.log('URL session error:', urlError)
-        
-        // Get the current session to see if OAuth worked
-        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
-        
-        console.log('Current session:', currentSession)
-        console.log('Session error:', sessionError)
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError)
-          navigate('/login?error=session_error')
-          return
-        }
+      // Check if we have tokens in the URL (indicates successful OAuth)
+      const accessToken = hashParams.get('access_token')
+      const code = urlParams.get('code')
+      
+      if (accessToken || code) {
+        console.log('OAuth tokens found, redirecting to dashboard...')
+        // Clear the URL hash to prevent issues
+        window.history.replaceState({}, document.title, window.location.pathname)
+        navigate('/dashboard')
+        return
+      }
 
-        if (currentSession && currentSession.user) {
-          console.log('User authenticated:', currentSession.user.email)
-          navigate('/dashboard')
-        } else {
-          console.log('No session found, redirecting to login')
-          navigate('/login?error=auth_failed')
-        }
-      } catch (err) {
-        console.error('Auth callback error:', err)
-        navigate('/login?error=callback_error')
+      // If no tokens and no user, redirect to login
+      if (!user && !isLoading) {
+        console.log('No OAuth tokens and no user, redirecting to login')
+        navigate('/login?error=auth_failed')
       }
     }
 
-    // Wait a moment before processing to ensure the page is fully loaded
-    const timer = setTimeout(() => {
-      if (!isLoading) {
-        handleAuthCallback()
-      }
-    }, 500)
+    // Process immediately if not loading
+    if (!isLoading) {
+      handleAuthCallback()
+    }
+  }, [navigate, isLoading, user])
 
-    return () => clearTimeout(timer)
-  }, [navigate, isLoading])
+  // If we have a user, redirect to dashboard
+  useEffect(() => {
+    if (user) {
+      console.log('User found, redirecting to dashboard')
+      navigate('/dashboard')
+    }
+  }, [user, navigate])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
