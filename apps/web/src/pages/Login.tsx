@@ -54,7 +54,7 @@ export function Login() {
               },
             }}
             providers={['google', 'github']}
-            redirectTo={`${window.location.origin}/dashboard`}
+            redirectTo={`${window.location.origin}/auth/callback`}
             onlyThirdPartyProviders={false}
             magicLink={true}
             showLinks={true}
