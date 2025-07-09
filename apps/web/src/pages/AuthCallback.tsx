@@ -14,12 +14,16 @@ export function AuthCallback() {
       console.log('URL search params:', window.location.search)
       
       try {
-        // Check if there's an OAuth callback in the URL
+        // Check if there's an OAuth callback in the URL (both query params and hash)
         const urlParams = new URLSearchParams(window.location.search)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        
         const code = urlParams.get('code')
-        const error = urlParams.get('error')
+        const accessToken = hashParams.get('access_token')
+        const error = urlParams.get('error') || hashParams.get('error')
         
         console.log('OAuth code from URL:', code ? 'Found' : 'Not found')
+        console.log('OAuth access_token from hash:', accessToken ? 'Found' : 'Not found')
         console.log('OAuth error from URL:', error)
         
         if (error) {
@@ -28,10 +32,17 @@ export function AuthCallback() {
           return
         }
 
-        if (code) {
-          console.log('OAuth code found, waiting for Supabase to process...')
+        if (code || accessToken) {
+          console.log('OAuth tokens found, waiting for Supabase to process...')
           // Wait a bit longer for Supabase to process the OAuth callback
           await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+        
+        // If there are tokens in the URL, let Supabase process them
+        if (accessToken) {
+          console.log('Manually refreshing session to pick up tokens...')
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
+          console.log('Refresh result:', refreshData, refreshError)
         }
         
         // Get the current session to see if OAuth worked
