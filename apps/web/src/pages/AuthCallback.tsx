@@ -38,11 +38,19 @@ export function AuthCallback() {
           await new Promise(resolve => setTimeout(resolve, 2000))
         }
         
-        // If there are tokens in the URL, let Supabase process them
+        // If there are tokens in the URL, manually set the session
         if (accessToken) {
-          console.log('Manually refreshing session to pick up tokens...')
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession()
-          console.log('Refresh result:', refreshData, refreshError)
+          console.log('Manually setting session from URL tokens...')
+          const refreshToken = hashParams.get('refresh_token')
+          const expiresAt = hashParams.get('expires_at')
+          
+          if (refreshToken) {
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            })
+            console.log('Set session result:', sessionData, sessionError)
+          }
         }
         
         // Get the current session to see if OAuth worked
