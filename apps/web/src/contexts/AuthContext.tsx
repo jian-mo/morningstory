@@ -41,23 +41,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const refreshToken = hashParams.get('refresh_token')
       
       if (accessToken && refreshToken && mounted) {
-        console.log('AuthContext: Found OAuth tokens in URL, setting session...')
-        try {
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          })
-          
-          if (error) {
-            console.error('AuthContext: Error setting session from URL:', error)
-          } else {
-            console.log('AuthContext: Successfully set session from URL:', data)
-            // Clear the hash to prevent issues
-            window.history.replaceState({}, document.title, window.location.pathname)
-          }
-        } catch (err) {
-          console.error('AuthContext: Failed to set session:', err)
-        }
+        console.log('AuthContext: Found OAuth tokens in URL, will let Supabase handle them')
+        // Don't try to manually set session - Supabase should handle it automatically
       }
       
       // Get the current session

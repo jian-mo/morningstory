@@ -18,6 +18,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'implicit' // Use implicit flow for better OAuth handling
+    storage: window.localStorage,
+    storageKey: 'supabase.auth.token'
   }
 })
