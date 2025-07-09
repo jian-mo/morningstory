@@ -41,15 +41,32 @@ export function AuthCallback() {
             // If the error is "Invalid API key", try a different approach
             if (sessionError.message === 'Invalid API key') {
               console.log('Trying alternative approach - storing tokens and reloading')
-              // Store the tokens manually
-              localStorage.setItem('supabase.auth.token', JSON.stringify({
-                currentSession: {
-                  access_token: accessToken,
-                  refresh_token: refreshToken,
-                  expires_at: parseInt(hashParams.get('expires_at') || '0')
-                },
-                expiresAt: parseInt(hashParams.get('expires_at') || '0')
-              }))
+              
+              // Get user info from access token
+              const expiresAt = parseInt(hashParams.get('expires_at') || '0')
+              const tokenType = hashParams.get('token_type') || 'bearer'
+              
+              // Create session object matching Supabase format
+              const session = {
+                access_token: accessToken,
+                refresh_token: refreshToken,
+                expires_at: expiresAt,
+                expires_in: expiresAt - Math.floor(Date.now() / 1000),
+                token_type: tokenType,
+                user: null // Will be populated by Supabase
+              }
+              
+              // Store in the format Supabase expects
+              localStorage.setItem('supabase.auth.token', JSON.stringify(session))
+              
+              // Also trigger auth state change manually
+              try {
+                const { data: user } = await supabase.auth.getUser(accessToken)
+                console.log('User info:', user)
+              } catch (userError) {
+                console.log('Could not get user info:', userError)
+              }
+              
               // Clear hash and reload
               window.location.href = '/dashboard'
               return
