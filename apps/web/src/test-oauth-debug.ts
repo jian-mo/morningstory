@@ -35,8 +35,7 @@ async function testOAuth() {
     if (error) {
       console.error('OAuth Error Details:', {
         message: error.message,
-        status: error.status,
-        statusText: error.statusText,
+        name: error.name,
       });
     }
     
