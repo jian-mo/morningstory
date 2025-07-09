@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 describe('OAuth Flow Logic', () => {
-  let mockLocalStorage: any
+  let mockLocalStorage: {
+    setItem: ReturnType<typeof vi.fn>
+    getItem: ReturnType<typeof vi.fn>
+    removeItem: ReturnType<typeof vi.fn>
+  }
   
   beforeEach(() => {
     mockLocalStorage = {

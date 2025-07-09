@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 
 export function AuthCallback() {
   const navigate = useNavigate()
-  const [isProcessing, setIsProcessing] = useState(true)
+  const [, setIsProcessing] = useState(true)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
