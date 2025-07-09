@@ -40,12 +40,15 @@ export default defineConfig(({ mode }) => {
     envPrefix: ['VITE_'], // Only expose VITE_ prefixed variables to the client
     server: {
       port: 3001,
-      proxy: {
-        '/api': {
-          target: 'http://localhost:3000',
-          changeOrigin: true,
+      // Only use proxy in development mode
+      ...(mode === 'development' && {
+        proxy: {
+          '/api': {
+            target: 'http://localhost:3000',
+            changeOrigin: true,
+          },
         },
-      },
+      }),
     },
     test: {
       globals: true,
