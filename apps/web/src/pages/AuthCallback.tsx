@@ -1,22 +1,51 @@
 import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 export function AuthCallback() {
   const navigate = useNavigate()
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, session } = useAuth()
 
   useEffect(() => {
-    // Supabase handles OAuth callbacks automatically
-    // This component just redirects authenticated users to dashboard
-    if (!isLoading) {
-      if (user) {
-        navigate('/dashboard')
-      } else {
-        navigate('/login?error=auth_failed')
+    const handleAuthCallback = async () => {
+      console.log('AuthCallback: Processing OAuth callback...')
+      
+      try {
+        // Get the current session to see if OAuth worked
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession()
+        
+        console.log('Current session:', currentSession)
+        console.log('Session error:', error)
+        
+        if (error) {
+          console.error('Session error:', error)
+          navigate('/login?error=session_error')
+          return
+        }
+
+        if (currentSession && currentSession.user) {
+          console.log('User authenticated:', currentSession.user.email)
+          navigate('/dashboard')
+        } else {
+          console.log('No session found, redirecting to login')
+          navigate('/login?error=auth_failed')
+        }
+      } catch (err) {
+        console.error('Auth callback error:', err)
+        navigate('/login?error=callback_error')
       }
     }
-  }, [user, isLoading, navigate])
+
+    // Don't redirect immediately, wait a moment for Supabase to process the callback
+    const timer = setTimeout(() => {
+      if (!isLoading) {
+        handleAuthCallback()
+      }
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [navigate, isLoading])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
