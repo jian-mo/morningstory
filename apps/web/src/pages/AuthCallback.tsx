@@ -12,6 +12,18 @@ export function AuthCallback() {
       console.log('Current URL:', window.location.href)
       
       try {
+        // First, let Supabase try to handle the OAuth callback automatically
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (session) {
+          console.log('Supabase detected OAuth session:', session)
+          navigate('/dashboard')
+          return
+        }
+        
+        // If Supabase didn't detect the session, try manual processing
+        console.log('No session detected by Supabase, trying manual processing...')
+        
         // Check for errors in URL
         const urlParams = new URLSearchParams(window.location.search)
         const hashParams = new URLSearchParams(window.location.hash.substring(1))
@@ -30,60 +42,32 @@ export function AuthCallback() {
         if (accessToken && refreshToken) {
           console.log('OAuth tokens found, manually processing...')
           
-          // Manually set the session since detectSessionInUrl isn't working
-          const { data, error: sessionError } = await supabase.auth.setSession({
+          // Try to exchange the tokens for a session
+          const { data, error: exchangeError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           })
           
-          if (sessionError) {
-            console.error('Error setting session:', sessionError)
-            // If the error is "Invalid API key", try a different approach
-            if (sessionError.message === 'Invalid API key') {
-              console.log('Trying alternative approach - storing tokens and reloading')
-              
-              // Get user info from access token
-              const expiresAt = parseInt(hashParams.get('expires_at') || '0')
-              const tokenType = hashParams.get('token_type') || 'bearer'
-              
-              // Create session object matching Supabase format
-              const session = {
-                access_token: accessToken,
-                refresh_token: refreshToken,
-                expires_at: expiresAt,
-                expires_in: expiresAt - Math.floor(Date.now() / 1000),
-                token_type: tokenType,
-                user: null // Will be populated by Supabase
-              }
-              
-              // Store in the format Supabase expects
-              localStorage.setItem('supabase.auth.token', JSON.stringify(session))
-              
-              // Also trigger auth state change manually
-              try {
-                const { data: user } = await supabase.auth.getUser(accessToken)
-                console.log('User info:', user)
-              } catch (userError) {
-                console.log('Could not get user info:', userError)
-              }
-              
-              // Clear hash and reload
-              window.location.href = '/dashboard'
-              return
-            }
-            navigate('/login?error=session_error')
+          if (exchangeError) {
+            console.error('Error setting session:', exchangeError)
+            
+            // If Supabase rejects the tokens, it means they might be from a different auth provider
+            // In this case, we should redirect to login with an error
+            navigate('/login?error=invalid_tokens')
             return
           }
           
-          console.log('Session set successfully:', data)
-          // Clear the URL hash
-          window.history.replaceState({}, document.title, window.location.pathname)
-          navigate('/dashboard')
-          return
+          if (data?.session) {
+            console.log('Session set successfully:', data.session)
+            // Clear the URL hash
+            window.history.replaceState({}, document.title, window.location.pathname)
+            navigate('/dashboard')
+            return
+          }
         }
 
-        // No tokens found
-        console.log('No OAuth tokens found')
+        // No tokens found or unable to process
+        console.log('No OAuth tokens found or unable to process')
         navigate('/login?error=no_tokens')
       } catch (err) {
         console.error('Auth callback error:', err)

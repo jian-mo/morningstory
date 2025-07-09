@@ -45,34 +45,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Don't try to manually set session - Supabase should handle it automatically
       }
       
-      // Check localStorage for manually stored session
-      const storedSession = localStorage.getItem('supabase.auth.token')
-      if (storedSession && mounted) {
-        try {
-          const session = JSON.parse(storedSession)
-          console.log('AuthContext: Found stored session:', session)
-          
-          // Validate the stored session
-          if (session.access_token && session.expires_at > Math.floor(Date.now() / 1000)) {
-            console.log('AuthContext: Stored session is valid, using it')
-            setSession(session)
-            
-            // Get user info
-            const { data: { user } } = await supabase.auth.getUser(session.access_token)
-            setUser(user)
-            setIsLoading(false)
-            return
-          } else {
-            console.log('AuthContext: Stored session is expired, clearing it')
-            localStorage.removeItem('supabase.auth.token')
-          }
-        } catch (err) {
-          console.error('AuthContext: Error parsing stored session:', err)
-          localStorage.removeItem('supabase.auth.token')
-        }
-      }
-      
-      // Get the current session from Supabase
+      // Get the current session from Supabase (it handles its own persistence)
       const { data: { session }, error } = await supabase.auth.getSession()
       console.log('AuthContext: Current session:', session)
       console.log('AuthContext: Session error:', error)
@@ -112,7 +85,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     session,
     isLoading,
-    isAuthenticated: !!user,
+    isAuthenticated: !!session && !!user,
     signOut,
   }
 
