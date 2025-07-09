@@ -10,16 +10,38 @@ export function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       console.log('AuthCallback: Processing OAuth callback...')
+      console.log('Current URL:', window.location.href)
+      console.log('URL search params:', window.location.search)
       
       try {
-        // Get the current session to see if OAuth worked
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession()
+        // Check if there's an OAuth callback in the URL
+        const urlParams = new URLSearchParams(window.location.search)
+        const code = urlParams.get('code')
+        const error = urlParams.get('error')
         
-        console.log('Current session:', currentSession)
-        console.log('Session error:', error)
+        console.log('OAuth code from URL:', code ? 'Found' : 'Not found')
+        console.log('OAuth error from URL:', error)
         
         if (error) {
-          console.error('Session error:', error)
+          console.error('OAuth error in URL:', error)
+          navigate('/login?error=oauth_error')
+          return
+        }
+
+        if (code) {
+          console.log('OAuth code found, waiting for Supabase to process...')
+          // Wait a bit longer for Supabase to process the OAuth callback
+          await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+        
+        // Get the current session to see if OAuth worked
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
+        
+        console.log('Current session:', currentSession)
+        console.log('Session error:', sessionError)
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
           navigate('/login?error=session_error')
           return
         }
@@ -37,12 +59,12 @@ export function AuthCallback() {
       }
     }
 
-    // Don't redirect immediately, wait a moment for Supabase to process the callback
+    // Wait a moment before processing to ensure the page is fully loaded
     const timer = setTimeout(() => {
       if (!isLoading) {
         handleAuthCallback()
       }
-    }, 1000)
+    }, 500)
 
     return () => clearTimeout(timer)
   }, [navigate, isLoading])
