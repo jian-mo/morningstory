@@ -30,27 +30,66 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    console.log('AuthContext: Getting initial session...')
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('AuthContext: Initial session:', session)
+    let mounted = true
+
+    const initializeAuth = async () => {
+      console.log('AuthContext: Initializing auth...')
+      
+      // Check if we have OAuth tokens in the URL hash
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const accessToken = hashParams.get('access_token')
+      const refreshToken = hashParams.get('refresh_token')
+      
+      if (accessToken && refreshToken && mounted) {
+        console.log('AuthContext: Found OAuth tokens in URL, setting session...')
+        try {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          })
+          
+          if (error) {
+            console.error('AuthContext: Error setting session from URL:', error)
+          } else {
+            console.log('AuthContext: Successfully set session from URL:', data)
+            // Clear the hash to prevent issues
+            window.history.replaceState({}, document.title, window.location.pathname)
+          }
+        } catch (err) {
+          console.error('AuthContext: Failed to set session:', err)
+        }
+      }
+      
+      // Get the current session
+      const { data: { session }, error } = await supabase.auth.getSession()
+      console.log('AuthContext: Current session:', session)
       console.log('AuthContext: Session error:', error)
-      setSession(session)
-      setUser(session?.user ?? null)
-      setIsLoading(false)
-    })
+      
+      if (mounted) {
+        setSession(session)
+        setUser(session?.user ?? null)
+        setIsLoading(false)
+      }
+    }
+
+    initializeAuth()
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('AuthContext: Auth state changed:', event, session)
-      setSession(session)
-      setUser(session?.user ?? null)
-      setIsLoading(false)
+      if (mounted) {
+        setSession(session)
+        setUser(session?.user ?? null)
+        setIsLoading(false)
+      }
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signOut = async () => {
