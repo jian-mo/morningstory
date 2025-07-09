@@ -1,59 +1,83 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 export function AuthCallback() {
   const navigate = useNavigate()
-  const { user, isLoading } = useAuth()
+  const [isProcessing, setIsProcessing] = useState(true)
 
   useEffect(() => {
-    const handleAuthCallback = () => {
+    const handleAuthCallback = async () => {
       console.log('AuthCallback: Processing OAuth callback...')
       console.log('Current URL:', window.location.href)
       
-      // Check for errors in URL
-      const urlParams = new URLSearchParams(window.location.search)
-      const hashParams = new URLSearchParams(window.location.hash.substring(1))
-      const error = urlParams.get('error') || hashParams.get('error')
-      
-      if (error) {
-        console.error('OAuth error in URL:', error)
-        navigate('/login?error=oauth_error')
-        return
-      }
+      try {
+        // Check for errors in URL
+        const urlParams = new URLSearchParams(window.location.search)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const error = urlParams.get('error') || hashParams.get('error')
+        
+        if (error) {
+          console.error('OAuth error in URL:', error)
+          navigate('/login?error=oauth_error')
+          return
+        }
 
-      // Check if we have tokens in the URL (indicates successful OAuth)
-      const accessToken = hashParams.get('access_token')
-      const code = urlParams.get('code')
-      
-      if (accessToken || code) {
-        console.log('OAuth tokens found, redirecting to dashboard...')
-        // Clear the URL hash to prevent issues
-        window.history.replaceState({}, document.title, window.location.pathname)
-        navigate('/dashboard')
-        return
-      }
+        // Get tokens from URL hash
+        const accessToken = hashParams.get('access_token')
+        const refreshToken = hashParams.get('refresh_token')
+        
+        if (accessToken && refreshToken) {
+          console.log('OAuth tokens found, manually processing...')
+          
+          // Manually set the session since detectSessionInUrl isn't working
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          })
+          
+          if (sessionError) {
+            console.error('Error setting session:', sessionError)
+            // If the error is "Invalid API key", try a different approach
+            if (sessionError.message === 'Invalid API key') {
+              console.log('Trying alternative approach - storing tokens and reloading')
+              // Store the tokens manually
+              localStorage.setItem('supabase.auth.token', JSON.stringify({
+                currentSession: {
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                  expires_at: parseInt(hashParams.get('expires_at') || '0')
+                },
+                expiresAt: parseInt(hashParams.get('expires_at') || '0')
+              }))
+              // Clear hash and reload
+              window.location.href = '/dashboard'
+              return
+            }
+            navigate('/login?error=session_error')
+            return
+          }
+          
+          console.log('Session set successfully:', data)
+          // Clear the URL hash
+          window.history.replaceState({}, document.title, window.location.pathname)
+          navigate('/dashboard')
+          return
+        }
 
-      // If no tokens and no user, redirect to login
-      if (!user && !isLoading) {
-        console.log('No OAuth tokens and no user, redirecting to login')
-        navigate('/login?error=auth_failed')
+        // No tokens found
+        console.log('No OAuth tokens found')
+        navigate('/login?error=no_tokens')
+      } catch (err) {
+        console.error('Auth callback error:', err)
+        navigate('/login?error=callback_error')
+      } finally {
+        setIsProcessing(false)
       }
     }
 
-    // Process immediately if not loading
-    if (!isLoading) {
-      handleAuthCallback()
-    }
-  }, [navigate, isLoading, user])
-
-  // If we have a user, redirect to dashboard
-  useEffect(() => {
-    if (user) {
-      console.log('User found, redirecting to dashboard')
-      navigate('/dashboard')
-    }
-  }, [user, navigate])
+    handleAuthCallback()
+  }, [navigate])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
