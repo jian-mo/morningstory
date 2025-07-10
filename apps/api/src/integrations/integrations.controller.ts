@@ -38,7 +38,29 @@ export class IntegrationsController {
   @Get('github/app/install')
   @ApiOperation({ summary: 'Get GitHub App installation URL' })
   async getGitHubAppInstallUrl(@Request() req: any) {
-    return this.githubAppService.getInstallationUrl(req.user.id);
+    try {
+      const configured = this.githubAppService.isConfigured();
+      
+      if (!configured) {
+        return {
+          configured: false,
+          message: 'GitHub App is not configured. Please set GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, and GITHUB_APP_NAME in your environment variables.',
+        };
+      }
+      
+      const state = Buffer.from(JSON.stringify({ userId: req.user.id })).toString('base64');
+      const installationUrl = this.githubAppService.getInstallationUrl(state);
+      
+      return {
+        configured: true,
+        installationUrl,
+      };
+    } catch (error) {
+      return {
+        configured: false,
+        message: error.message || 'Failed to get GitHub App installation URL',
+      };
+    }
   }
 
   @Get('github/app/callback')

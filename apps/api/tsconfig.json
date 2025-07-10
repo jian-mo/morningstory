@@ -15,6 +15,6 @@
       "@morning-story/shared": ["libs/shared/src"]
     }
   },
-  "include": ["src/**/*", "../../libs/**/*"],
-  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
+  "include": ["src/**/*", "../../libs/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -58,6 +58,22 @@ const verifyToken = (req) => {
   try {
     const token = authHeader.substring(7);
     
+    // Try to decode as base64 first (test tokens)
+    try {
+      const base64Decoded = JSON.parse(Buffer.from(token, 'base64').toString());
+      if (base64Decoded && base64Decoded.userId) {
+        return {
+          userId: base64Decoded.userId,
+          email: base64Decoded.email,
+          name: base64Decoded.name,
+          exp: base64Decoded.exp,
+          iat: base64Decoded.iat
+        };
+      }
+    } catch (base64Error) {
+      // Not a base64 token, try JWT
+    }
+    
     // Decode Supabase JWT token (without verification for development)
     // In production, you should verify with Supabase JWT secret
     const decoded = jwt.decode(token);
@@ -366,17 +382,23 @@ app.get('/integrations', async (req, res) => {
 });
 
 app.get('/integrations/github/app/install', (req, res) => {
+  // Get user from token for authentication 
+  const userData = verifyToken(req);
+  if (!userData) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
   // Check if GitHub App environment variables are configured
   const isConfigured = !!(
     process.env.GITHUB_APP_ID && 
     process.env.GITHUB_APP_NAME && 
-    process.env.GITHUB_APP_PRIVATE_KEY
+    process.env.GITHUB_APP_PRIVATE_KEY &&
+    process.env.GITHUB_APP_ID !== 'your-github-app-id' &&
+    !process.env.GITHUB_APP_PRIVATE_KEY.includes('your-private-key-here')
   );
 
   if (isConfigured) {
-    // Get user from token for state
-    const userData = verifyToken(req);
-    const userId = userData?.userId || 'anonymous';
+    const userId = userData.userId;
     
     const state = Buffer.from(JSON.stringify({ userId })).toString('base64');
     const installationUrl = `https://github.com/apps/${process.env.GITHUB_APP_NAME}/installations/new?state=${state}`;
@@ -506,6 +528,99 @@ app.post('/integrations/github/connect', async (req, res) => {
   }
 });
 
+// Get GitHub integration type endpoint
+app.get('/integrations/github/type', async (req, res) => {
+  const userData = verifyToken(req);
+  if (!userData) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  try {
+    // Check if we're in development mode
+    const isDev = process.env.NODE_ENV === 'development';
+    const isDevUser = userData.userId && (userData.userId.includes('dev-') || userData.userId.includes('fallback-'));
+    
+    if (isDev || isDevUser) {
+      // Development mode: check if token is set in environment
+      if (process.env.GITHUB_PERSONAL_ACCESS_TOKEN) {
+        return res.json({ type: 'token' });
+      }
+      return res.json({ type: null });
+    }
+    
+    // Production mode: check database
+    const integration = await prisma.integration.findUnique({
+      where: {
+        userId_type: {
+          userId: userData.userId,
+          type: 'GITHUB'
+        }
+      },
+      select: {
+        metadata: true
+      }
+    });
+    
+    if (!integration) {
+      return res.json({ type: null });
+    }
+    
+    // Check if it's a GitHub App integration (has installationId)
+    const metadata = integration.metadata || {};
+    if (metadata.installationId) {
+      return res.json({ type: 'app' });
+    } else {
+      return res.json({ type: 'token' });
+    }
+  } catch (error) {
+    console.error('GitHub type check error:', error);
+    res.status(500).json({ error: 'Failed to check GitHub integration type' });
+  }
+});
+
+// DELETE integration endpoint
+app.delete('/integrations/:type', async (req, res) => {
+  const userData = verifyToken(req);
+  if (!userData) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  
+  const { type } = req.params;
+  
+  try {
+    // Check if we're in development mode
+    const isDev = process.env.NODE_ENV === 'development';
+    const isDevUser = userData.userId && (userData.userId.includes('dev-') || userData.userId.includes('fallback-'));
+    
+    if (isDev || isDevUser) {
+      // Development mode: remove from environment
+      if (type === 'GITHUB') {
+        delete process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+        return res.json({ message: `${type} integration removed successfully` });
+      }
+      return res.status(404).json({ error: 'Integration not found' });
+    }
+    
+    // Production mode: delete from database
+    await prisma.integration.delete({
+      where: {
+        userId_type: {
+          userId: userData.userId,
+          type: type.toUpperCase()
+        }
+      }
+    });
+    
+    res.json({ message: `${type} integration removed successfully` });
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ error: 'Integration not found' });
+    }
+    console.error('Delete integration error:', error);
+    res.status(500).json({ error: 'Failed to remove integration' });
+  }
+});
+
 // GitHub App callback endpoint
 app.get('/integrations/github/app/callback', async (req, res) => {
   const { installation_id, setup_action, state } = req.query;
@@ -520,11 +635,18 @@ app.get('/integrations/github/app/callback', async (req, res) => {
   
   if (installation_id && setup_action === 'install') {
     try {
+      // Check if state is provided
+      if (!state) {
+        return res.redirect(`${frontendUrl}/integrations?error=missing_state`);
+      }
+      
       // Decode state to get userId
       let userId = null;
-      if (state) {
+      try {
         const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
         userId = decoded.userId;
+      } catch (error) {
+        return res.redirect(`${frontendUrl}/integrations?error=invalid_state`);
       }
       
       if (!userId || userId === 'anonymous') {
