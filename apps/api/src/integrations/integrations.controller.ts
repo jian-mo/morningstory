@@ -2,7 +2,7 @@ import { Controller, Get, Delete, Param, UseGuards, Request, Post, Body, Query, 
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { Response } from 'express';
 import { IntegrationsService } from './integrations.service';
-// import { GitHubAppService } from './services/github-app.service';
+import { GitHubAppService } from './services/github-app.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { IntegrationType } from '@prisma/client';
 
@@ -13,7 +13,7 @@ import { IntegrationType } from '@prisma/client';
 export class IntegrationsController {
   constructor(
     private readonly integrationsService: IntegrationsService,
-    // private readonly githubAppService: GitHubAppService,
+    private readonly githubAppService: GitHubAppService,
   ) {}
 
   @Get()
@@ -38,11 +38,7 @@ export class IntegrationsController {
   @Get('github/app/install')
   @ApiOperation({ summary: 'Get GitHub App installation URL' })
   async getGitHubAppInstallUrl(@Request() req: any) {
-    return {
-      error: 'GitHub App not configured',
-      message: 'GitHub App integration is temporarily disabled.',
-      configured: false
-    };
+    return this.githubAppService.getInstallationUrl(req.user.id);
   }
 
   @Get('github/app/callback')
@@ -66,12 +62,11 @@ export class IntegrationsController {
         return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/integrations?error=missing_state`);
       }
 
-      // const result = await this.githubAppService.handleInstallationCallback(
-      //   userId,
-      //   parseInt(installationId),
-      //   setupAction,
-      // );
-      const result = { success: false, error: 'GitHub App temporarily disabled' };
+      const result = await this.githubAppService.handleInstallationCallback(
+        userId,
+        parseInt(installationId),
+        setupAction,
+      );
 
       if (result.success) {
         return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3001'}/integrations?success=github_connected`);
