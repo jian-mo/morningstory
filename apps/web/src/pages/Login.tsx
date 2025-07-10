@@ -1,20 +1,60 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { useAuth } from '../contexts/AuthContext'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { Bot } from 'lucide-react'
+import { Bot, AlertCircle } from 'lucide-react'
 
 export function Login() {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard')
     }
   }, [isAuthenticated, navigate])
+
+  useEffect(() => {
+    // Check for error parameters in URL
+    const error = searchParams.get('error')
+    const description = searchParams.get('description')
+    
+    if (error) {
+      let message = 'Authentication failed'
+      switch (error) {
+        case 'auth_failed':
+          message = 'Authentication failed. Please try again.'
+          break
+        case 'auth_timeout':
+          message = 'Authentication timed out. Please try again.'
+          break
+        case 'access_denied':
+          message = 'Access denied. Authentication was cancelled or rejected.'
+          break
+        default:
+          message = description ? decodeURIComponent(description) : `Authentication error: ${error}`
+      }
+      setErrorMessage(message)
+      console.log('Login: Error from URL params:', error, description)
+    } else {
+      setErrorMessage(null)
+    }
+  }, [searchParams])
+
+  // Listen for auth events to clear errors on new attempts
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        setErrorMessage(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -32,6 +72,16 @@ export function Login() {
             Sign in to automate your daily standup preparation
           </p>
         </div>
+        
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+              <span className="text-red-800 text-sm">{errorMessage}</span>
+            </div>
+          </div>
+        )}
         
         {/* Supabase Auth UI */}
         <div className="bg-white py-8 px-6 shadow-lg rounded-lg">
