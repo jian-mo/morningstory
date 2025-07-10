@@ -167,7 +167,7 @@ export function Dashboard() {
                   </div>
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => copyToClipboard(todayStandup.content)}
+                      onClick={() => copyToClipboard(todayStandup.content || '')}
                       className="text-blue-600 hover:text-blue-800"
                       title="Copy to clipboard"
                     >
@@ -184,7 +184,7 @@ export function Dashboard() {
                 </div>
                 <div className="prose max-w-none">
                   <pre className="whitespace-pre-wrap font-sans text-gray-700 bg-gray-50 p-4 rounded-md">
-                    {todayStandup.content}
+                    {todayStandup.content || 'No content available'}
                   </pre>
                 </div>
               </div>
@@ -229,14 +229,14 @@ export function Dashboard() {
                           )}
                         </div>
                         <p className="text-gray-700 line-clamp-3">
-                          {standup.content.substring(0, 200)}...
+                          {standup.content?.substring(0, 200) || 'No content available'}...
                         </p>
                       </div>
                     </div>
                     
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => copyToClipboard(standup.content)}
+                        onClick={() => copyToClipboard(standup.content || '')}
                         className="text-blue-600 hover:text-blue-800"
                         title="Copy to clipboard"
                       >
@@ -302,14 +302,14 @@ export function Dashboard() {
               
               <div className="prose max-w-none">
                 <pre className="whitespace-pre-wrap font-sans text-gray-700 bg-gray-50 p-4 rounded-md max-h-96 overflow-y-auto">
-                  {selectedStandup.content}
+                  {selectedStandup.content || 'No content available'}
                 </pre>
               </div>
             </div>
             
             <div className="flex justify-end space-x-2">
               <button
-                onClick={() => copyToClipboard(selectedStandup.content)}
+                onClick={() => copyToClipboard(selectedStandup.content || '')}
                 className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 Copy to Clipboard
