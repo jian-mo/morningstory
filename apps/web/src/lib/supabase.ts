@@ -19,6 +19,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
     storage: window.localStorage,
-    flowType: 'pkce'
+    flowType: 'implicit', // Temporary switch from PKCE to implicit flow
+    debug: import.meta.env.DEV // Enable debug mode in development
   }
 })

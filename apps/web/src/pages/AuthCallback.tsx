@@ -9,25 +9,54 @@ export function AuthCallback() {
     console.log('AuthCallback: Processing OAuth callback...')
     console.log('AuthCallback: Current URL:', window.location.href)
     console.log('AuthCallback: Hash params:', window.location.hash)
+    console.log('AuthCallback: Search params:', window.location.search)
     
-    // Check for error in URL parameters
+    // Check for error in URL parameters (both hash and search)
     const hashParams = new URLSearchParams(window.location.hash.substring(1))
-    const error = hashParams.get('error')
-    const errorDescription = hashParams.get('error_description')
+    const searchParams = new URLSearchParams(window.location.search)
+    const error = hashParams.get('error') || searchParams.get('error')
+    const errorDescription = hashParams.get('error_description') || searchParams.get('error_description')
     
     if (error) {
       console.error('AuthCallback: OAuth error:', error, errorDescription)
       navigate(`/login?error=${error}&description=${encodeURIComponent(errorDescription || '')}`)
       return
     }
+
+    // Check if we have an authorization code in the URL
+    const code = searchParams.get('code')
+    if (code) {
+      console.log('AuthCallback: Found authorization code, length:', code.length)
+      console.log('AuthCallback: Checking localStorage for PKCE verifier...')
+      
+      // Check if PKCE code verifier exists in localStorage
+      const codeVerifier = localStorage.getItem('supabase.auth.token')
+      console.log('AuthCallback: PKCE verifier in localStorage:', !!codeVerifier)
+      
+      if (!codeVerifier) {
+        console.error('AuthCallback: No PKCE verifier found in localStorage - this will cause 401')
+        navigate('/login?error=pkce_missing&description=PKCE%20code%20verifier%20missing')
+        return
+      }
+    }
     
     // The Supabase client is configured to automatically handle the OAuth callback.
     // Listen for auth state changes to know when to redirect.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('AuthCallback: Auth state changed:', event, session)
       if (event === 'SIGNED_IN' && session) {
         console.log('AuthCallback: Sign in successful, redirecting to dashboard')
         navigate('/dashboard')
+      } else if (event === 'SIGNED_OUT' && code) {
+        console.log('AuthCallback: PKCE flow failed, trying to get session again...')
+        // Sometimes the session takes a moment to be available
+        setTimeout(async () => {
+          const { data: { session: retrySession }, error: retryError } = await supabase.auth.getSession()
+          console.log('AuthCallback: Retry session check:', retrySession, retryError)
+          if (retrySession) {
+            navigate('/dashboard')
+          }
+        }, 2000)
       } else if (event === 'USER_UPDATED' && !session) {
         console.log('AuthCallback: User updated but no session, redirecting to login')
         navigate('/login?error=auth_failed')
