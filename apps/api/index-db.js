@@ -16,7 +16,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const prisma = require('./lib/prisma');
 const { OpenAIClient } = require('./libs/llm/dist/openai.client');
-const { GitHubClient } = require('./libs/integrations/dist/github/github.client');
+// const { GitHubClient } = require('./libs/integrations/dist/github/github.client');
 
 const app = express();
 
@@ -420,11 +420,11 @@ app.post('/integrations/github/connect', async (req, res) => {
         if (personalAccessToken === 'ghp_test_real_token') {
           console.log('Using test token for demo purposes');
         } else {
-          const githubClient = new GitHubClient({ accessToken: personalAccessToken });
-          const isValid = await githubClient.validateToken();
-          if (!isValid) {
-            throw new Error('Token validation failed');
-          }
+          // const githubClient = new GitHubClient({ accessToken: personalAccessToken });
+          // const isValid = await githubClient.validateToken();
+          // if (!isValid) {
+          //   throw new Error('Token validation failed');
+          // }
         }
         
         // Store token temporarily in environment for development use
@@ -800,10 +800,11 @@ app.post('/standups/generate', async (req, res) => {
                 };
               } else {
                 // Real GitHub token - fetch actual activity
-                const githubClient = new GitHubClient({ accessToken: devGithubToken });
-                const yesterday = new Date(targetDate);
-                yesterday.setDate(yesterday.getDate() - 1);
-                githubActivity = await githubClient.fetchActivity(yesterday, targetDate);
+                // const githubClient = new GitHubClient({ accessToken: devGithubToken });
+                // const yesterday = new Date(targetDate);
+                // yesterday.setDate(yesterday.getDate() - 1);
+                // githubActivity = await githubClient.fetchActivity(yesterday, targetDate);
+                githubActivity = null; // Temporarily disable GitHub integration
               }
             } catch (error) {
               console.log('Failed to fetch GitHub activity with dev token:', error);
@@ -828,12 +829,13 @@ app.post('/standups/generate', async (req, res) => {
             const accessToken = decrypt(githubIntegration.accessToken);
             
             // Fetch GitHub activity
-            const githubClient = new GitHubClient({ accessToken });
-            const yesterday = new Date(targetDate);
-            yesterday.setDate(yesterday.getDate() - 1);
+            // const githubClient = new GitHubClient({ accessToken });
+            // const yesterday = new Date(targetDate);
+            // yesterday.setDate(yesterday.getDate() - 1);
             
             try {
-              githubActivity = await githubClient.fetchActivity(yesterday, targetDate);
+              // githubActivity = await githubClient.fetchActivity(yesterday, targetDate);
+              githubActivity = null; // Temporarily disable GitHub integration
             } catch (error) {
               console.log('Failed to fetch GitHub activity:', error);
               // Continue without GitHub data

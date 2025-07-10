@@ -10,11 +10,13 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, user, session } = useAuth()
 
   console.log('ProtectedRoute check:', {
+    hasSession: !!session,
     isAuthenticated,
     isLoading,
-    user: user?.email,
-    hasSession: !!session,
-    pathname: window.location.pathname
+    pathname: window.location.pathname,
+    user: user ? { email: user.email, id: user.id } : undefined,
+    sessionHasUser: !!session?.user,
+    accessTokenPresent: !!session?.access_token
   })
 
   if (isLoading) {
