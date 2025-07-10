@@ -61,7 +61,11 @@ export function Dashboard() {
         tone: 'professional',
         length: 'medium'
       })
-      setStandups(prev => [newStandup, ...prev])
+      // Remove any existing standup with the same ID to prevent duplicates
+      setStandups(prev => {
+        const filtered = prev.filter(s => s.id !== newStandup.id)
+        return [newStandup, ...filtered]
+      })
       setTodayStandup(newStandup)
     } catch (error) {
       console.error('Failed to generate standup:', error)

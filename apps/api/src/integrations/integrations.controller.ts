@@ -35,15 +35,15 @@ export class IntegrationsController {
     return this.integrationsService.connectGitHubWithToken(req.user.id, body.personalAccessToken);
   }
 
-  // @Get('github/app/install')
-  // @ApiOperation({ summary: 'Get GitHub App installation URL' })
-  // async getGitHubAppInstallUrl(@Request() req: any) {
-  //   return {
-  //     error: 'GitHub App not configured',
-  //     message: 'GitHub App integration is temporarily disabled.',
-  //     configured: false
-  //   };
-  // }
+  @Get('github/app/install')
+  @ApiOperation({ summary: 'Get GitHub App installation URL' })
+  async getGitHubAppInstallUrl(@Request() req: any) {
+    return {
+      error: 'GitHub App not configured',
+      message: 'GitHub App integration is temporarily disabled.',
+      configured: false
+    };
+  }
 
   @Get('github/app/callback')
   @ApiOperation({ summary: 'Handle GitHub App installation callback' })
