@@ -3,6 +3,7 @@ import { Github, Key, ExternalLink, CheckCircle, AlertCircle, Zap, Shield } from
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { API_ENDPOINTS } from '../config/env'
+import { api } from '../lib/api'
 
 export function ConnectGitHub() {
   const [selectedMethod, setSelectedMethod] = useState<'app' | 'token'>('app')
@@ -15,21 +16,12 @@ export function ConnectGitHub() {
   useEffect(() => {
     const checkGitHubAppConfig = async () => {
       try {
-        const response = await fetch(API_ENDPOINTS.integrations.github.appInstall, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          },
-        })
+        const data = await api.request(API_ENDPOINTS.integrations.github.appInstall)
+        setGithubAppConfigured(data.configured)
         
-        if (response.ok) {
-          const data = await response.json()
-          setGithubAppConfigured(data.configured)
-          
-          // If GitHub App is not configured, default to token method
-          if (!data.configured) {
-            setSelectedMethod('token')
-          }
+        // If GitHub App is not configured, default to token method
+        if (!data.configured) {
+          setSelectedMethod('token')
         }
       } catch (error) {
         console.error('Error checking GitHub App configuration:', error)
@@ -46,22 +38,14 @@ export function ConnectGitHub() {
     
     setIsValidating(true)
     try {
-      const response = await fetch(API_ENDPOINTS.integrations.github.connect, {
+      await api.request(API_ENDPOINTS.integrations.github.connect, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-        },
         body: JSON.stringify({ personalAccessToken: token }),
       })
       
-      if (response.ok) {
-        setValidationResult('success')
-        // Redirect back to integrations page
-        setTimeout(() => window.location.href = '/integrations', 2000)
-      } else {
-        setValidationResult('error')
-      }
+      setValidationResult('success')
+      // Redirect back to integrations page
+      setTimeout(() => window.location.href = '/integrations', 2000)
     } catch (error) {
       setValidationResult('error')
     } finally {
@@ -71,24 +55,13 @@ export function ConnectGitHub() {
 
   const handleGitHubAppConnect = async () => {
     try {
-      const response = await fetch(API_ENDPOINTS.integrations.github.appInstall, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-        },
-      })
+      const data = await api.request(API_ENDPOINTS.integrations.github.appInstall)
       
-      if (response.ok) {
-        const data = await response.json()
-        
-        if (data.configured && data.installationUrl) {
-          window.location.href = data.installationUrl
-        } else {
-          // GitHub App not configured
-          alert(data.message || 'GitHub App integration is not set up yet. Please use Personal Access Token instead.')
-        }
+      if (data.configured && data.installationUrl) {
+        window.location.href = data.installationUrl
       } else {
-        alert('Failed to get GitHub App installation URL. Please try again.')
+        // GitHub App not configured
+        alert(data.message || 'GitHub App integration is not set up yet. Please use Personal Access Token instead.')
       }
     } catch (error) {
       console.error('Error getting GitHub App installation URL:', error)
