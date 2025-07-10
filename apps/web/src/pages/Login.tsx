@@ -35,9 +35,6 @@ export function Login() {
         case 'access_denied':
           message = 'Access denied. Authentication was cancelled or rejected.'
           break
-        case 'pkce_missing':
-          message = 'OAuth session expired. Please try signing in again.'
-          break
         default:
           message = description ? decodeURIComponent(description) : `Authentication error: ${error}`
       }
