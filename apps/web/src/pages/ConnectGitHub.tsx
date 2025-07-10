@@ -4,8 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { API_ENDPOINTS } from '../config/env'
 import { api } from '../lib/api'
+import { useAuth } from '../contexts/AuthContext'
 
 export function ConnectGitHub() {
+  const { isAuthenticated, isLoading } = useAuth()
   const [selectedMethod, setSelectedMethod] = useState<'app' | 'token'>('app')
   const [token, setToken] = useState('')
   const [isValidating, setIsValidating] = useState(false)
@@ -15,6 +17,11 @@ export function ConnectGitHub() {
   // Check if GitHub App is configured on component mount
   useEffect(() => {
     const checkGitHubAppConfig = async () => {
+      // Wait for authentication to be ready
+      if (!isAuthenticated || isLoading) {
+        return
+      }
+      
       try {
         const data = await api.request(API_ENDPOINTS.integrations.github.appInstall)
         setGithubAppConfigured(data.configured)
@@ -31,7 +38,7 @@ export function ConnectGitHub() {
     }
     
     checkGitHubAppConfig()
-  }, [])
+  }, [isAuthenticated, isLoading])
 
   const handleConnect = async () => {
     if (!token.trim()) return
@@ -67,6 +74,17 @@ export function ConnectGitHub() {
       console.error('Error getting GitHub App installation URL:', error)
       alert('Failed to connect to GitHub App. Please try again.')
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading authentication...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
