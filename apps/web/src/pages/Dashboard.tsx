@@ -222,7 +222,7 @@ export function Dashboard() {
                             <Clock className="w-4 h-4 mr-1" />
                             {new Date(standup.generatedAt).toLocaleTimeString()}
                           </span>
-                          {standup.metadata.source && (
+                          {standup.metadata?.source && (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                               {standup.metadata.source}
                             </span>
@@ -288,12 +288,12 @@ export function Dashboard() {
                   <Clock className="w-4 h-4 mr-1" />
                   Generated: {new Date(selectedStandup.generatedAt).toLocaleString()}
                 </span>
-                {selectedStandup.metadata.tone && (
+                {selectedStandup.metadata?.tone && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     {selectedStandup.metadata.tone}
                   </span>
                 )}
-                {selectedStandup.metadata.length && (
+                {selectedStandup.metadata?.length && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                     {selectedStandup.metadata.length}
                   </span>
